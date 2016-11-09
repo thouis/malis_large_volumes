@@ -114,6 +114,9 @@ def compute_cost_recursive(labels, edge_weights, neighborhood, edge_tree, edge_t
 def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
     costs = np.zeros(edge_tree.shape[0], dtype=np.float32)
 
+    # save these for later.
+    linear_edge_indices = edge_tree[:, 0].copy()
+
     # process tree from root (later in array) to leaves (earlier)
     for idx in range(edge_tree.shape[0] - 1, 0, -1):
         if edge_tree[idx, 0] == -1:
@@ -121,7 +124,15 @@ def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
         assert costs[idx] == 0.0  # this node shouldn't have been visisted before
         compute_cost_recursive(labels, edge_weights, neighborhood,
                                edge_tree, idx, pos_neg_phase, costs)
-    return costs
+
+    costs_array = np.zeros_like(edge_weights)
+
+    # mask to actual edges, put costs in place
+    costs = costs[linear_edge_indices > -1]
+    linear_edge_indices = linear_edge_indices[linear_edge_indices > -1]
+    costs_array.ravel()[linear_edge_indices] = costs
+
+    return costs_array
 
 if __name__ == '__main__':
     for sz in range(4, 5):
