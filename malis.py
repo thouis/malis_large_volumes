@@ -81,6 +81,7 @@ def build_tree(labels, edge_weights, neighborhood):
 
 def compute_cost_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_neg_phase, costs):
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
+    assert costs[edge_tree_idx] == 0.0  # this node shouldn't have been visited before
     if child_1 == -1:
         # first child is a voxel.  Compute its location
         d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
@@ -102,15 +103,22 @@ def compute_cost_recursive(labels, edge_weights, neighborhood, edge_tree, edge_t
                                                  edge_tree, child_2, pos_neg_phase, costs)
 
     costs[edge_tree_idx] = compute_edge_cost(region_counts_1, region_counts_2, pos_neg_phase)
+
+    # mark this edge as done so recursion doesn't hit it again
+    edge_tree[edge_tree_idx, 0] = -1
+
     region_counts_1.update(region_counts_2)
     return region_counts_1
 
 
 def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
     costs = np.zeros(edge_tree.shape[0], dtype=np.float32)
-    for idx in range(edge_tree.shape[0]):
+
+    # process tree from root (later in array) to leaves (earlier)
+    for idx in range(edge_tree.shape[0] - 1, 0, -1):
         if edge_tree[idx, 0] == -1:
             continue
+        assert costs[idx] == 0.0  # this node shouldn't have been visisted before
         compute_cost_recursive(labels, edge_weights, neighborhood,
                                edge_tree, idx, pos_neg_phase, costs)
     return costs
