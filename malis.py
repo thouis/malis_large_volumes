@@ -79,6 +79,42 @@ def build_tree(labels, edge_weights, neighborhood):
         order_index += 1
 
 
+def compute_cost_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_neg_phase, costs):
+    linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
+    if child_1 == -1:
+        # first child is a voxel.  Compute its location
+        d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
+        region_counts_1 = {labels[d_1, w_1, h_1]: 1}
+    else:
+        # recurse first child
+        region_counts_1 = compute_cost_recursive(labels, edge_weights, neighborhood,
+                                                 edge_tree, child_1, pos_neg_phase, costs)
+
+    if child_2 == -1:
+        # second child is a voxel.  Compute its location via neighborhood.
+        d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
+        offset = neighborhood[k, ...]
+        d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
+        region_counts_2 = {labels[d_2, w_2, h_2]: 1}
+    else:
+        # recurse first child
+        region_counts_2 = compute_cost_recursive(labels, edge_weights, neighborhood,
+                                                 edge_tree, child_2, pos_neg_phase, costs)
+
+    costs[edge_tree_idx] = compute_edge_cost(region_counts_1, region_counts_2, pos_neg_phase)
+    region_counts_1.update(region_counts_2)
+    return region_counts_1
+
+
+def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
+    costs = np.zeros(edge_tree.shape[0], dtype=np.float32)
+    for idx in range(edge_tree.shape[0]):
+        if edge_tree[idx, 0] == -1:
+            continue
+        compute_cost_recursive(labels, edge_weights, neighborhood,
+                               edge_tree, idx, pos_neg_phase, costs)
+    return costs
+
 if __name__ == '__main__':
     for sz in range(4, 5):
         print(2 ** sz)
