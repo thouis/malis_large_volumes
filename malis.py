@@ -24,8 +24,10 @@ def build_tree(labels, edge_weights, neighborhood):
 
         returns: edge tree (D * W * H, 3) (int32)
             array of: (linear edge index, child 1 index in edge tree, child 2 index in edge tree)
-            If a child index is -1, it's a pixel, not an edge, and can be inferred from the linear edge index.
+            If a child index is -1, it's a pixel, not an edge, and can be
+                inferred from the linear edge index.
             Tree is terminated by linear_edge_index == -1
+
     '''
 
     D, W, H = labels.shape
@@ -97,8 +99,6 @@ def compute_edge_cost(region_counts_1, region_counts_2, pos_neg_phase):
         raise("Specify pos_neg_phase as 'pos' or 'neg'")
     return cost
 
-
-    
 
 def compute_cost_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_neg_phase, costs):
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
