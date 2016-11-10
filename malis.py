@@ -82,6 +82,7 @@ def build_tree(labels, edge_weights, neighborhood):
 def compute_cost_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_neg_phase, costs):
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
     assert costs[edge_tree_idx] == 0.0  # this node shouldn't have been visited before
+    assert linear_edge_index != -1  # also marks visited nodes
     if child_1 == -1:
         # first child is a voxel.  Compute its location
         d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
@@ -98,7 +99,7 @@ def compute_cost_recursive(labels, edge_weights, neighborhood, edge_tree, edge_t
         d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
         region_counts_2 = {labels[d_2, w_2, h_2]: 1}
     else:
-        # recurse first child
+        # recurse second child
         region_counts_2 = compute_cost_recursive(labels, edge_weights, neighborhood,
                                                  edge_tree, child_2, pos_neg_phase, costs)
 
