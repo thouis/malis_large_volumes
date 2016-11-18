@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as np
 from libc.stdint cimport uint32_t
 import pdb
+cimport cython
 from cython.view cimport array as cvarray
 from argsort_int32 import qargsort32
 
@@ -19,7 +20,8 @@ cdef merge(unsigned int [:] id_table, int idx_from, int idx_to):
         id_table[idx_from] = idx_to
         merge(id_table, old, idx_to)
 
-
+#@cython.boundscheck(False)
+#@cython.wraparound(False)
 def build_tree_cython(labels, edge_weights, neighborhood):
     '''find tree of edges linking regions.
         labels = (D, W, H) integer label volume.  0s ignored
@@ -34,19 +36,16 @@ def build_tree_cython(labels, edge_weights, neighborhood):
             Tree is terminated by linear_edge_index == -1
 
     '''
-#    cdef np.uint32_t [:, :, :] labels = labels_
-#    cdef np.float32_t [:,:,:,:] edge_weights = edge_weights_
-#    cdef np.int32_t [:, :] neighborhood = neighborhood_
     cdef int D, W, H
     cdef unsigned int[:, :, :] merged_labels
     cdef unsigned int [:] merged_labels_raveled
     cdef int [:] region_parents
     cdef int [:, :] edge_tree
-    cdef float [:] ordered_indices
+    cdef unsigned int [:] ordered_indices
     cdef float [:] ew_flat
     ew_flat = edge_weights.ravel()
 
-#    D, W, H = labels.shape
+    # get shape information
     D = labels.shape[0]
     W = labels.shape[1]
     H = labels.shape[2]
@@ -62,9 +61,9 @@ def build_tree_cython(labels, edge_weights, neighborhood):
 
     # edge tree
     edge_tree = - np.ones((D * W * H, 3), dtype=np.int32)
-
-    ordered_indices = np.asarray(ew_flat).argsort()[::-1].astype(np.float32)
-#    ordered_indices = qargsort32(ew_flat)
+    
+    # sort array and get corresponding indices
+    ordered_indices = qargsort32(np.asarray(ew_flat))[::-1]
 
     cdef int order_index = 0
     cdef int edge_idx
@@ -78,11 +77,10 @@ def build_tree_cython(labels, edge_weights, neighborhood):
         # voxels, but every voxel can be merged by only exactly one edge,
         # so this loop will run exactly n_voxels times.
         d_1, w_1, h_1, k = np.unravel_index(edge_idx, edge_weights.shape)
-        offset = neighborhood[k, ...]
+        offset = neighborhood[k]
         d_2 = d_1 + offset[0]
         w_2 = w_1 + offset[1]
         h_2 = h_1 + offset[2]
-#        d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
 
         # ignore out-of-volume links
         if ((not 0 <= d_2 < D) or

@@ -12,7 +12,7 @@ if __name__ == '__main__':
 #        labels = np.empty((2 ** sz, 2 ** sz, 2 ** sz), dtype=np.uint32)
 #        weights = np.empty((2 ** sz, 2 ** sz, 2 ** sz, 3), dtype=np.float32)
         labels = np.empty((5, 2 ** sz, 2 ** sz), dtype=np.uint32)
-        weights = np.empty((5, 2 ** sz, 2 ** sz, 3), dtype=np.float32)
+        weights = np.random.normal(size=(5, 2 ** sz, 2 ** sz, 3)).astype(dtype=np.float32)
         neighborhood = np.zeros((3, 3), dtype=np.int32)
         neighborhood[0, ...] = [1, 0, 0]
         neighborhood[1, ...] = [0, 1, 0]
