@@ -32,10 +32,10 @@ cdef int argpartition(uint32_t *offsets,
         if i >= j:
             break
         with gil:
-            assert values[offsets[j]] < pivot <= values[offsets[i]]
+            assert values[offsets[j]] < pivot <= values[offsets[i]], "prob1"
         swap(offsets, i, j)
         with gil:
-            assert values[offsets[i]] < pivot <= values[offsets[j]]
+            assert values[offsets[i]] < pivot <= values[offsets[j]], "prob2"
     with gil:
         assert i >= j, "i < j"
         assert i < end, "i >= end"
@@ -81,6 +81,7 @@ cdef void qargsort(uint32_t[:]  offsets,
     qargsort(offsets, values, boundary + 1, end)
 
 def qargsort32(arr):
+    print(arr.size)
     assert arr.size < 2**32
     offsets = np.arange(arr.size, dtype=np.uint32)
     qargsort(offsets, arr, 0, arr.size)

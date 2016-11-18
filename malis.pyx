@@ -1,8 +1,10 @@
 import numpy as np
-import pdb
+cimport numpy as np
+from libc.stdint cimport uint32_t
+#import pdb
 
 
-def chase(id_table, idx):
+cdef int chase(np.ndarray id_table, int idx):
     if id_table[idx] != idx:
         id_table[idx] = chase(id_table, id_table[idx])
     return id_table[idx]
@@ -62,7 +64,7 @@ def build_tree(labels, edge_weights, neighborhood):
             continue
 
         orig_label_1 = merged_labels[d_1, w_1, h_1]
-        orig_label_2 = merged_labels[int(d_2), int(w_2), int(h_2)]
+        orig_label_2 = merged_labels[d_2, w_2, h_2]
 
         region_label_1 = chase(merged_labels.ravel(), orig_label_1)
         region_label_2 = chase(merged_labels.ravel(), orig_label_2)
@@ -83,8 +85,6 @@ def build_tree(labels, edge_weights, neighborhood):
         # store parent edge of region by location in tree
         region_parents[new_label] = order_index
         
-
-
         order_index += 1
     return edge_tree
 
@@ -162,18 +162,3 @@ def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
 
     return costs_array
 
-if __name__ == '__main__':
-    for sz in range(4, 5):
-        print(2 ** sz)
-#        labels = np.empty((2 ** sz, 2 ** sz, 2 ** sz), dtype=np.uint32)
-#        weights = np.empty((2 ** sz, 2 ** sz, 2 ** sz, 3), dtype=np.float32)
-        labels = np.empty((5, 2 ** sz, 2 ** sz), dtype=np.uint32)
-        weights = np.empty((5, 2 ** sz, 2 ** sz, 3), dtype=np.float32)
-        neighborhood = np.zeros((3, 3))
-        neighborhood[0, ...] = [1, 0, 0]
-        neighborhood[1, ...] = [0, 1, 0]
-        neighborhood[2, ...] = [0, 0, 1]
-        print(labels.size * labels.itemsize / float(2**30), "Gbytes")
-        edge_tree = build_tree(labels, weights, neighborhood)
-        costs = compute_costs(labels, weights, neighborhood, edge_tree, "neg")
-        print("Sum of costs: " + str(np.sum(costs)))

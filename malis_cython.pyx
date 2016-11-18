@@ -1,21 +1,26 @@
 import numpy as np
+cimport numpy as np
+from libc.stdint cimport uint32_t
 import pdb
+from cython.view cimport array as cvarray
+from argsort_int32 import qargsort32
 
 
-def chase(id_table, idx):
+cdef int chase(unsigned int [:] id_table, int idx):
     if id_table[idx] != idx:
         id_table[idx] = chase(id_table, id_table[idx])
     return id_table[idx]
 
 
-def merge(id_table, idx_from, idx_to):
+cdef merge(unsigned int [:] id_table, int idx_from, int idx_to):
+    cdef int old
     if id_table[idx_from] != idx_to:
         old = id_table[idx_from]
         id_table[idx_from] = idx_to
         merge(id_table, old, idx_to)
 
 
-def build_tree(labels, edge_weights, neighborhood):
+def build_tree_cython(labels, edge_weights, neighborhood):
     '''find tree of edges linking regions.
         labels = (D, W, H) integer label volume.  0s ignored
         edge_weights = (D, W, H, K) floating point values.
@@ -29,13 +34,27 @@ def build_tree(labels, edge_weights, neighborhood):
             Tree is terminated by linear_edge_index == -1
 
     '''
-
-    D, W, H = labels.shape
+#    cdef np.uint32_t [:, :, :] labels = labels_
+#    cdef np.float32_t [:,:,:,:] edge_weights = edge_weights_
+#    cdef np.int32_t [:, :] neighborhood = neighborhood_
+    cdef int D, W, H
+    cdef unsigned int[:, :, :] merged_labels
+    cdef unsigned int [:] merged_labels_raveled
+    cdef int [:] region_parents
+    cdef int [:, :] edge_tree
+    cdef float [:] ordered_indices
+    cdef float [:] ew_flat
     ew_flat = edge_weights.ravel()
+
+#    D, W, H = labels.shape
+    D = labels.shape[0]
+    W = labels.shape[1]
+    H = labels.shape[2]
 
     # this acts as both the merged label matrix, as well as the pixel-to-pixel
     # linking graph.
-    merged_labels = np.arange(labels.size, dtype=np.uint32).reshape(labels.shape)
+    merged_labels = np.arange(labels.size, dtype=np.uint32).reshape((D, W, H))
+    merged_labels_raveled = np.asarray(merged_labels).ravel()
 
     # edge that last merged a region, or -1 if this pixel hasn't been merged
     # into a region, yet.
@@ -44,8 +63,15 @@ def build_tree(labels, edge_weights, neighborhood):
     # edge tree
     edge_tree = - np.ones((D * W * H, 3), dtype=np.int32)
 
-    ordered_indices = ew_flat.argsort()[::-1]
-    order_index = 0
+    ordered_indices = np.asarray(ew_flat).argsort()[::-1].astype(np.float32)
+#    ordered_indices = qargsort32(ew_flat)
+
+    cdef int order_index = 0
+    cdef int edge_idx
+    cdef int d_1, w_1, h_1, k
+    cdef int d_2, w_2, h_2
+    cdef int orig_label_1, orig_label_2, region_label_1, region_label_2, new_label
+    cdef int [:] offset
 
     for edge_idx in ordered_indices:
         # the size of ordered_indices is k times bigger than the amount of 
@@ -53,7 +79,10 @@ def build_tree(labels, edge_weights, neighborhood):
         # so this loop will run exactly n_voxels times.
         d_1, w_1, h_1, k = np.unravel_index(edge_idx, edge_weights.shape)
         offset = neighborhood[k, ...]
-        d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
+        d_2 = d_1 + offset[0]
+        w_2 = w_1 + offset[1]
+        h_2 = h_1 + offset[2]
+#        d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
 
         # ignore out-of-volume links
         if ((not 0 <= d_2 < D) or
@@ -62,10 +91,10 @@ def build_tree(labels, edge_weights, neighborhood):
             continue
 
         orig_label_1 = merged_labels[d_1, w_1, h_1]
-        orig_label_2 = merged_labels[int(d_2), int(w_2), int(h_2)]
+        orig_label_2 = merged_labels[d_2, w_2, h_2]
 
-        region_label_1 = chase(merged_labels.ravel(), orig_label_1)
-        region_label_2 = chase(merged_labels.ravel(), orig_label_2)
+        region_label_1 = chase(merged_labels_raveled, orig_label_1)
+        region_label_2 = chase(merged_labels_raveled, orig_label_2)
 
         if region_label_1 == region_label_2:
             # already linked in tree, do not create a new edge.
@@ -77,16 +106,15 @@ def build_tree(labels, edge_weights, neighborhood):
 
         # merge regions
         new_label = min(region_label_1, region_label_2)
-        merge(merged_labels.ravel(), orig_label_1, new_label)
-        merge(merged_labels.ravel(), orig_label_2, new_label)
+        merge(merged_labels_raveled, orig_label_1, new_label)
+        merge(merged_labels_raveled, orig_label_2, new_label)
 
         # store parent edge of region by location in tree
         region_parents[new_label] = order_index
         
 
-
         order_index += 1
-    return edge_tree
+    return np.asarray(edge_tree)
 
 
 def compute_edge_cost(region_counts_1, region_counts_2, pos_neg_phase):
@@ -162,18 +190,3 @@ def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
 
     return costs_array
 
-if __name__ == '__main__':
-    for sz in range(4, 5):
-        print(2 ** sz)
-#        labels = np.empty((2 ** sz, 2 ** sz, 2 ** sz), dtype=np.uint32)
-#        weights = np.empty((2 ** sz, 2 ** sz, 2 ** sz, 3), dtype=np.float32)
-        labels = np.empty((5, 2 ** sz, 2 ** sz), dtype=np.uint32)
-        weights = np.empty((5, 2 ** sz, 2 ** sz, 3), dtype=np.float32)
-        neighborhood = np.zeros((3, 3))
-        neighborhood[0, ...] = [1, 0, 0]
-        neighborhood[1, ...] = [0, 1, 0]
-        neighborhood[2, ...] = [0, 0, 1]
-        print(labels.size * labels.itemsize / float(2**30), "Gbytes")
-        edge_tree = build_tree(labels, weights, neighborhood)
-        costs = compute_costs(labels, weights, neighborhood, edge_tree, "neg")
-        print("Sum of costs: " + str(np.sum(costs)))
