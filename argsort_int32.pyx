@@ -82,6 +82,7 @@ cdef void qargsort(uint32_t[:]  offsets,
 
 def qargsort32(arr):
     assert arr.size < 2**32
+#    cdef np.uint32_t [:] offsets = np.arange(arr.size, dtype=np.uint32)
     offsets = np.arange(arr.size, dtype=np.uint32)
     qargsort(offsets, arr, 0, arr.size)
     return offsets

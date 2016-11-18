@@ -7,21 +7,41 @@ from cython.view cimport array as cvarray
 from argsort_int32 import qargsort32
 
 
-cdef int chase(unsigned int [:] id_table, int idx):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef int chase(unsigned int [:] id_table, int idx) nogil:
     if id_table[idx] != idx:
         id_table[idx] = chase(id_table, id_table[idx])
     return id_table[idx]
 
 
-cdef merge(unsigned int [:] id_table, int idx_from, int idx_to):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef int merge(unsigned int [:] id_table, int idx_from, int idx_to) nogil:
     cdef int old
     if id_table[idx_from] != idx_to:
         old = id_table[idx_from]
         id_table[idx_from] = idx_to
         merge(id_table, old, idx_to)
 
-#@cython.boundscheck(False)
-#@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void my_unravel_index(int k, int [::1] shape, int[4] return_idxes) nogil:
+    cdef int subtractor = 0
+    cdef int last_idx, scdl_idx, scdf_idx, first_idx
+    
+    return_idxes[3] = k %  shape[3]
+    subtractor += return_idxes[3]
+    return_idxes[2] = (k-subtractor) % shape[2]
+    subtractor += return_idxes[2]
+    return_idxes[1] = (k-subtractor) % shape[1]
+    subtractor += return_idxes[1]
+    return_idxes[0] = (k-subtractor) % shape[0]
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def build_tree_cython(labels, edge_weights, neighborhood):
     '''find tree of edges linking regions.
         labels = (D, W, H) integer label volume.  0s ignored
@@ -36,12 +56,12 @@ def build_tree_cython(labels, edge_weights, neighborhood):
             Tree is terminated by linear_edge_index == -1
 
     '''
+    cdef int [:, :] neighborhood_view = neighborhood
     cdef int D, W, H
     cdef unsigned int[:, :, :] merged_labels
     cdef unsigned int [:] merged_labels_raveled
     cdef int [:] region_parents
     cdef int [:, :] edge_tree
-    cdef unsigned int [:] ordered_indices
     cdef float [:] ew_flat
     ew_flat = edge_weights.ravel()
 
@@ -63,7 +83,7 @@ def build_tree_cython(labels, edge_weights, neighborhood):
     edge_tree = - np.ones((D * W * H, 3), dtype=np.int32)
     
     # sort array and get corresponding indices
-    ordered_indices = qargsort32(np.asarray(ew_flat))[::-1]
+    cdef unsigned int [:] ordered_indices = qargsort32(np.asarray(ew_flat))[::-1]
 
     cdef int order_index = 0
     cdef int edge_idx
@@ -71,47 +91,58 @@ def build_tree_cython(labels, edge_weights, neighborhood):
     cdef int d_2, w_2, h_2
     cdef int orig_label_1, orig_label_2, region_label_1, region_label_2, new_label
     cdef int [:] offset
+    cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
+    cdef int return_idxes[4]
+    cdef int n_loops = len(ordered_indices)
+    cdef int i
+    with nogil:
+        for i in range(n_loops):
+            edge_idx = ordered_indices[i]
+            # the size of ordered_indices is k times bigger than the amount of 
+            # voxels, but every voxel can be merged by only exactly one edge,
+            # so this loop will run exactly n_voxels times.
+            my_unravel_index(edge_idx, ew_shape, return_idxes)
 
-    for edge_idx in ordered_indices:
-        # the size of ordered_indices is k times bigger than the amount of 
-        # voxels, but every voxel can be merged by only exactly one edge,
-        # so this loop will run exactly n_voxels times.
-        d_1, w_1, h_1, k = np.unravel_index(edge_idx, edge_weights.shape)
-        offset = neighborhood[k]
-        d_2 = d_1 + offset[0]
-        w_2 = w_1 + offset[1]
-        h_2 = h_1 + offset[2]
+            d_1 = return_idxes[0]
+            w_1 = return_idxes[1]
+            h_1 = return_idxes[2]
+            k = return_idxes[3]
 
-        # ignore out-of-volume links
-        if ((not 0 <= d_2 < D) or
-            (not 0 <= w_2 < W) or
-            (not 0 <= h_2 < H)):
-            continue
+            offset = neighborhood_view[k,:]
+            d_2 = d_1 + offset[0]
+            w_2 = w_1 + offset[1]
+            h_2 = h_1 + offset[2]
 
-        orig_label_1 = merged_labels[d_1, w_1, h_1]
-        orig_label_2 = merged_labels[d_2, w_2, h_2]
+            # ignore out-of-volume links
+            if ((not 0 <= d_2 < D) or
+                (not 0 <= w_2 < W) or
+                (not 0 <= h_2 < H)):
+                continue
 
-        region_label_1 = chase(merged_labels_raveled, orig_label_1)
-        region_label_2 = chase(merged_labels_raveled, orig_label_2)
+            orig_label_1 = merged_labels[d_1, w_1, h_1]
+            orig_label_2 = merged_labels[d_2, w_2, h_2]
 
-        if region_label_1 == region_label_2:
-            # already linked in tree, do not create a new edge.
-            continue
+            region_label_1 = chase(merged_labels_raveled, orig_label_1)
+            region_label_2 = chase(merged_labels_raveled, orig_label_2)
 
-        edge_tree[order_index, 0] = edge_idx
-        edge_tree[order_index, 1] = region_parents[region_label_1]
-        edge_tree[order_index, 2] = region_parents[region_label_2]
+            if region_label_1 == region_label_2:
+                # already linked in tree, do not create a new edge.
+                continue
 
-        # merge regions
-        new_label = min(region_label_1, region_label_2)
-        merge(merged_labels_raveled, orig_label_1, new_label)
-        merge(merged_labels_raveled, orig_label_2, new_label)
+            edge_tree[order_index, 0] = edge_idx
+            edge_tree[order_index, 1] = region_parents[region_label_1]
+            edge_tree[order_index, 2] = region_parents[region_label_2]
 
-        # store parent edge of region by location in tree
-        region_parents[new_label] = order_index
-        
+            # merge regions
+            new_label = min(region_label_1, region_label_2)
+            merge(merged_labels_raveled, orig_label_1, new_label)
+            merge(merged_labels_raveled, orig_label_2, new_label)
 
-        order_index += 1
+            # store parent edge of region by location in tree
+            region_parents[new_label] = order_index
+            
+
+            order_index += 1
     return np.asarray(edge_tree)
 
 
