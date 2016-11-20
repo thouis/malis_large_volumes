@@ -10,6 +10,8 @@ from argsort_int32 import qargsort32
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef int chase(unsigned int [:] id_table, int idx) nogil:
+    """ Terminates once it finds an index into id_table where the corresponding
+        element in id_table is an index to itself """
     if id_table[idx] != idx:
         id_table[idx] = chase(id_table, id_table[idx])
     return id_table[idx]
@@ -27,17 +29,15 @@ cdef int merge(unsigned int [:] id_table, int idx_from, int idx_to) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void my_unravel_index(int k, int [::1] shape, int[4] return_idxes) nogil:
-    cdef int subtractor = 0
-    cdef int last_idx, scdl_idx, scdf_idx, first_idx
+cdef inline void my_unravel_index(int k, int [::1] shape, int[4] return_idxes) nogil:
     
     return_idxes[3] = k %  shape[3]
-    subtractor += return_idxes[3]
-    return_idxes[2] = (k-subtractor) % shape[2]
-    subtractor += return_idxes[2]
-    return_idxes[1] = (k-subtractor) % shape[1]
-    subtractor += return_idxes[1]
-    return_idxes[0] = (k-subtractor) % shape[0]
+    k -= return_idxes[3]
+    return_idxes[2] = k % shape[2]
+    k -= return_idxes[2]
+    return_idxes[1] = k % shape[1]
+    k -= return_idxes[1]
+    return_idxes[0] = k % shape[0]
 
 
 @cython.boundscheck(False)
@@ -87,8 +87,7 @@ def build_tree_cython(labels, edge_weights, neighborhood):
 
     cdef int order_index = 0
     cdef int edge_idx
-    cdef int d_1, w_1, h_1, k
-    cdef int d_2, w_2, h_2
+    cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
     cdef int orig_label_1, orig_label_2, region_label_1, region_label_2, new_label
     cdef int [:] offset
     cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
@@ -101,13 +100,15 @@ def build_tree_cython(labels, edge_weights, neighborhood):
             # the size of ordered_indices is k times bigger than the amount of 
             # voxels, but every voxel can be merged by only exactly one edge,
             # so this loop will run exactly n_voxels times.
-            my_unravel_index(edge_idx, ew_shape, return_idxes)
 
+            # get first voxel connected by the current edge
+            my_unravel_index(edge_idx, ew_shape, return_idxes)
             d_1 = return_idxes[0]
             w_1 = return_idxes[1]
             h_1 = return_idxes[2]
             k = return_idxes[3]
 
+            # get idxes of second voxel connected by this edge
             offset = neighborhood_view[k,:]
             d_2 = d_1 + offset[0]
             w_2 = w_1 + offset[1]

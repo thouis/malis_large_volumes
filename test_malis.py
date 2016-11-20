@@ -33,5 +33,6 @@ if __name__ == '__main__':
         print("\nregular python:")
         print("Time: " + str(end_time - start_time))
         print(edge_tree[1])
+
 #        costs = compute_costs(labels, weights, neighborhood, edge_tree, "neg")
 #        print("Sum of costs: " + str(np.sum(costs)))
