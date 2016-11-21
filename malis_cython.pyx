@@ -17,19 +17,19 @@ cdef int chase(unsigned int [:] id_table, int idx) nogil:
     return id_table[idx]
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef int merge(unsigned int [:] id_table, int idx_from, int idx_to) nogil:
-    cdef int old
-    if id_table[idx_from] != idx_to:
-        old = id_table[idx_from]
-        id_table[idx_from] = idx_to
-        merge(id_table, old, idx_to)
+#@cython.boundscheck(False)
+#@cython.wraparound(False)
+#cdef int merge(unsigned int [:] id_table, int idx_from, int idx_to) nogil:
+#    cdef int old
+#    if id_table[idx_from] != idx_to:
+#        old = id_table[idx_from]
+#        id_table[idx_from] = idx_to
+#        merge(id_table, old, idx_to)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef inline void my_unravel_index(int k, int [::1] shape, int[4] return_idxes) nogil:
+cdef void my_unravel_index(int k, int [::1] shape, int[4] return_idxes) nogil:
     
     return_idxes[3] = k %  shape[3]
     k -= return_idxes[3]
@@ -72,12 +72,15 @@ def build_tree_cython(labels, edge_weights, neighborhood):
 
     # this acts as both the merged label matrix, as well as the pixel-to-pixel
     # linking graph.
-    merged_labels = np.arange(labels.size, dtype=np.uint32).reshape((D, W, H))
-    merged_labels_raveled = np.asarray(merged_labels).ravel()
+    merged_labels_array = np.arange(labels.size, dtype=np.uint32).reshape((D, W, H))
+    merged_labels = merged_labels_array
+    merged_labels_raveled_array = merged_labels_array.view()
+    merged_labels_raveled_array.shape = (-1,)
+    merged_labels_raveled = merged_labels_raveled_array
 
     # edge that last merged a region, or -1 if this pixel hasn't been merged
     # into a region, yet.
-    region_parents = - np.ones_like(labels, dtype=np.int32).ravel()
+    region_parents = - np.ones(np.asarray(merged_labels_raveled).shape, dtype=np.int32)
 
     # edge tree
     edge_tree = - np.ones((D * W * H, 3), dtype=np.int32)
@@ -85,7 +88,7 @@ def build_tree_cython(labels, edge_weights, neighborhood):
     # sort array and get corresponding indices
     cdef unsigned int [:] ordered_indices = qargsort32(np.asarray(ew_flat))[::-1]
 
-    cdef int order_index = 0
+    cdef int order_index = 0 # index into edge tree
     cdef int edge_idx
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
     cdef int orig_label_1, orig_label_2, region_label_1, region_label_2, new_label
@@ -98,8 +101,7 @@ def build_tree_cython(labels, edge_weights, neighborhood):
         for i in range(n_loops):
             edge_idx = ordered_indices[i]
             # the size of ordered_indices is k times bigger than the amount of 
-            # voxels, but every voxel can be merged by only exactly one edge,
-            # so this loop will run exactly n_voxels times.
+            # voxels, but the amount of merger edges is much smaller
 
             # get first voxel connected by the current edge
             my_unravel_index(edge_idx, ew_shape, return_idxes)
@@ -119,7 +121,7 @@ def build_tree_cython(labels, edge_weights, neighborhood):
                 (not 0 <= w_2 < W) or
                 (not 0 <= h_2 < H)):
                 continue
-
+            
             orig_label_1 = merged_labels[d_1, w_1, h_1]
             orig_label_2 = merged_labels[d_2, w_2, h_2]
 
@@ -136,14 +138,25 @@ def build_tree_cython(labels, edge_weights, neighborhood):
 
             # merge regions
             new_label = min(region_label_1, region_label_2)
-            merge(merged_labels_raveled, orig_label_1, new_label)
-            merge(merged_labels_raveled, orig_label_2, new_label)
+            if new_label != region_label_1:
+                merged_labels_raveled[orig_label_1] = new_label
+                merged_labels_raveled[region_label_1] = new_label
+#                merge(merged_labels_raveled, orig_label_1, new_label)
+            else:
+                merged_labels_raveled[orig_label_2] = new_label
+                merged_labels_raveled[region_label_2] = new_label
+#                merge(merged_labels_raveled, orig_label_2, new_label)
 
             # store parent edge of region by location in tree
             region_parents[new_label] = order_index
             
-
+            # increase index of next to be assigned element in edge_tree
+            # this can't be incremented earlier, because lots of edges
+            # that link to voxels that already belong to the same region
+            # will ultimately be ignored and hence order_indedx shouldn't
+            # be increased
             order_index += 1
+
     return np.asarray(edge_tree)
 
 

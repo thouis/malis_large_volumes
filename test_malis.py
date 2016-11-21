@@ -7,7 +7,7 @@ pyximport.install(setup_args={'include_dirs': [np.get_include()]})
 from malis_cython import build_tree_cython
 
 if __name__ == '__main__':
-    for sz in range(5, 11):
+    for sz in range(4, 11):
         labels = np.empty((2 ** sz, 2 ** sz, 2 ** sz), dtype=np.uint32)
         weights = np.random.normal(size=(2 ** sz, 2 ** sz, 2 ** sz, 3)).astype(dtype=np.float32)
         neighborhood = np.zeros((3, 3), dtype=np.int32)
