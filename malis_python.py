@@ -1,5 +1,8 @@
 import numpy as np
 import pdb
+import pyximport
+pyximport.install(setup_args={'include_dirs': [np.get_include()]})
+from argsort_int32 import qargsort32
 
 
 def chase(id_table, idx):
@@ -44,7 +47,8 @@ def build_tree(labels, edge_weights, neighborhood):
     # edge tree
     edge_tree = - np.ones((D * W * H, 3), dtype=np.int32)
 
-    ordered_indices = ew_flat.argsort()[::-1]
+    ordered_indices = ew_flat.argsort()[::-1].astype(np.uint32)
+#    ordered_indices = qargsort32(ew_flat)[::-1]
     order_index = 0
 
     for edge_idx in ordered_indices:

@@ -2,12 +2,12 @@ import numpy as np
 import pdb
 import time
 import pyximport
-import malis_python
 pyximport.install(setup_args={'include_dirs': [np.get_include()]})
 import malis_cython
+import malis_python
 
 if __name__ == '__main__':
-    for sz in range(5, 6):
+    for sz in range(6, 9):
         labels = np.empty((2 ** sz, 2 ** sz, 2 ** sz), dtype=np.uint32)
         weights = np.random.normal(size=(2 ** sz, 2 ** sz, 2 ** sz, 3)).astype(dtype=np.float32)
         neighborhood = np.zeros((3, 3), dtype=np.int32)
