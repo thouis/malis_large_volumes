@@ -3,6 +3,8 @@ import pdb
 import pyximport
 pyximport.install(setup_args={'include_dirs': [np.get_include()]})
 from argsort_int32 import qargsort32
+import sys
+sys.setrecursionlimit(8000)
 
 
 def chase(id_table, idx):

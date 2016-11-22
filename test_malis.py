@@ -31,7 +31,6 @@ def check_tree(edge_tree):
     # traverse the tree non-recursively to check whether all indices are visited
     # and whether any index is visited twice
     visited_indices = set()
-
     index = len(et) -1
     while index >= 0:
         # choose new index
@@ -39,7 +38,11 @@ def check_tree(edge_tree):
             index -= 1
             continue
 
+        print("Traversing a tree!")
+        depth = 1
+        max_depth = 1
         neglected_second_children = []
+        corresponding_depth = []
         while index != -1:
 
             # check that we haven't visited this index before
@@ -53,6 +56,7 @@ def check_tree(edge_tree):
                 # check if there was a second non-voxel child, if so add it to our list
                 if et[index, 2] != -1:
                     neglected_second_children.append(et[index, 2])
+                    corresponding_depth.append(depth)
 
             elif et[index, 2] != -1:
                 # if there was a second child but no first one, take the second but 
@@ -61,12 +65,18 @@ def check_tree(edge_tree):
             else:
                 if len(neglected_second_children) > 0:
                     new_index = neglected_second_children[-1]
+                    depth = corresponding_depth[-1]
                     neglected_second_children.pop()
+                    corresponding_depth.pop()
                 else:
                     new_index = -1
 
             # update the index
             index = new_index
+            depth += 1
+            if depth > max_depth:
+                max_depth = depth
+    print("Finished traversing tree, maximum depth was: " + str(max_depth))
 
     # check that all elements were visited
     relevant_indices = np.where(et[:, 0] != -1)[0]
@@ -76,7 +86,7 @@ def check_tree(edge_tree):
 
 
 if __name__ == '__main__':
-    for sz in range(5, 8):
+    for sz in range(4, 8):
         labels = np.empty((2 ** sz, 2 ** sz, 2 ** sz), dtype=np.uint32)
         weights = np.random.normal(size=(2 ** sz, 2 ** sz, 2 ** sz, 3)).astype(dtype=np.float32)
         neighborhood = np.zeros((3, 3), dtype=np.int32)
@@ -94,11 +104,11 @@ if __name__ == '__main__':
         end_time = time.time()
         print("Tree computation time: " + str(end_time - start_time))
         check_tree(edge_tree_cython)
-#        start_time = time.time()
-#        costs = malis_python.compute_costs(labels, weights, neighborhood, edge_tree_cython.copy(), "neg")
-#        end_time = time.time()
-#        print("Cost computation time: " + str(end_time - start_time))
-#        print("Sum of costs: " + str(np.sum(costs)))
+        start_time = time.time()
+        costs = malis_python.compute_costs(labels, weights, neighborhood, edge_tree_cython.copy(), "neg")
+        end_time = time.time()
+        print("Cost computation time: " + str(end_time - start_time))
+        print("Sum of costs: " + str(np.sum(costs)))
 
         # regular python
         print("\nregular python:")

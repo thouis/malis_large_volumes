@@ -8,7 +8,7 @@ from argsort_int32 import qargsort32
 from malis_python import merge as merge_python
 from malis_python import chase as chase_python
 import sys
-sys.setrecursionlimit(5000)
+sys.setrecursionlimit(8000)
 
 
 #@cython.boundscheck(False)
