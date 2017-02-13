@@ -173,10 +173,10 @@ def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
 # compute pairs (instead of costs) methods
 
 
-def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_neg_phase, costs):
+def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
+    current_counts = np.zeros(shape=(10, 2))
 
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
-    assert costs[edge_tree_idx] == 0.0  # this node shouldn't have been visited before
     assert linear_edge_index != -1  # also marks visited nodes
     if child_1 == -1:
         # first child is a voxel.  Compute its location
@@ -184,8 +184,8 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
         region_counts_1 = {labels[d_1, w_1, h_1]: 1}
     else:
         # recurse first child
-        region_counts_1 = compute_pairs_recursive_python(labels, edge_weights, neighborhood,
-                                                 edge_tree, child_1, pos_neg_phase, costs)
+        region_counts_1 = compute_pairs_recursive(labels, edge_weights, neighborhood,
+                                                 edge_tree, child_1, pos_pairs, neg_pairs)
 
     if child_2 == -1:
         # second child is a voxel.  Compute its location via neighborhood.
@@ -195,10 +195,8 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
         region_counts_2 = {labels[d_2, w_2, h_2]: 1}
     else:
         # recurse second child
-        region_counts_2 = compute_pairs_recursive_python(labels, edge_weights, neighborhood,
-                                                 edge_tree, child_2, pos_neg_phase, costs)
-
-    costs[edge_tree_idx] = compute_edge_cost(region_counts_1, region_counts_2, pos_neg_phase)
+        region_counts_2 = compute_pairs_recursive(labels, edge_weights, neighborhood,
+                                                 edge_tree, child_2, pos_pairs, neg_pairs)
 
     # mark this edge as done so recursion doesn't hit it again
     edge_tree[edge_tree_idx, 0] = -1
@@ -207,8 +205,9 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
     return region_counts_1
 
 
-def compute_pairs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
-    costs = np.zeros(edge_tree.shape[0], dtype=np.float32)
+def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
+    pos_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint32)
+    neg_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint32)
 
     # save these for later.
     linear_edge_indices = edge_tree[:, 0].copy()
@@ -217,15 +216,14 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
     for idx in range(edge_tree.shape[0] - 1, 0, -1):
         if edge_tree[idx, 0] == -1:
             continue
-        assert costs[idx] == 0.0  # this node shouldn't have been visisted before
-        compute_pairs_recursive_python(labels, edge_weights, neighborhood,
-                               edge_tree, idx, pos_neg_phase, costs)
+        compute_pairs_recursive(labels, edge_weights, neighborhood,
+                               edge_tree, idx, pos_pairs, neg_pairs)
 
-    costs_array = np.zeros_like(edge_weights)
+#    costs_array = np.zeros_like(edge_weights)
+#
+#    # mask to actual edges, put costs in place
+#    costs = costs[linear_edge_indices > -1]
+#    linear_edge_indices = linear_edge_indices[linear_edge_indices > -1]
+#    costs_array.ravel()[linear_edge_indices] = costs
 
-    # mask to actual edges, put costs in place
-    costs = costs[linear_edge_indices > -1]
-    linear_edge_indices = linear_edge_indices[linear_edge_indices > -1]
-    costs_array.ravel()[linear_edge_indices] = costs
-
-    return costs_array
+    return pos_pairs, neg_pairs

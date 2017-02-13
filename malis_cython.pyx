@@ -23,7 +23,7 @@ sys.setrecursionlimit(8000)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int chase(unsigned int [:] id_table, int idx) nogil:
+cdef int chase(unsigned int [:] id_table,unsigned int idx) nogil:
     """ Terminates once it finds an index into id_table where the corresponding
         element in id_table is an index to itself """
     if id_table[idx] != idx:
@@ -34,25 +34,32 @@ cdef int chase(unsigned int [:] id_table, int idx) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void my_unravel_index(int k, int [::1] shape, int[4] return_idxes) nogil:
+cdef void my_unravel_index(int flat_idx, int [::1] shape, int[4] return_idxes) nogil:
+    """
+    unravels the 4-dimensional index of flat_idx which points into a flattened
+    4-dimensional array
+    """
     cdef int len_shape = 4 # hardcoded, could be changed later
     cdef int dim, i
     cdef int current_stride
 
     for dim in range(len_shape):
-        # compute stride
+
+        # compute stride of dimension dim by multiplying the dimensions
+        # from the current dim to the final dimension
         current_stride = 1
-        for i in range(len_shape - dim - 1):
-            current_stride *= shape[dim + i + 1]
-        
+        for i in range(dim + 1, len_shape):
+            current_stride *= shape[i]
+
         # compute index
-        return_idxes[dim] = int(k / current_stride)
-        k = k % current_stride
+        return_idxes[dim] = int(flat_idx / current_stride)
+        flat_idx = flat_idx % current_stride
 
 
 
 
-    
+
+
 
 
 @cython.boundscheck(False)
@@ -99,7 +106,7 @@ def build_tree(labels, edge_weights, neighborhood):
 
     # edge tree
     edge_tree = - np.ones((D * W * H, 3), dtype=np.int32)
-    
+
     # sort array and get corresponding indices
 #    cdef unsigned int [:] ordered_indices = qargsort32(ew_flat)[::-1]
     cdef unsigned int [:] ordered_indices = ew_flat.argsort()[::-1].astype(np.uint32)
@@ -107,7 +114,7 @@ def build_tree(labels, edge_weights, neighborhood):
     cdef int order_index = 0 # index into edge tree
     cdef int edge_idx
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
-    cdef int orig_label_1, orig_label_2, region_label_1, region_label_2, new_label
+    cdef unsigned int orig_label_1, orig_label_2, region_label_1, region_label_2, new_label
     cdef int [:] offset
     cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
     cdef int return_idxes[4]
@@ -117,7 +124,7 @@ def build_tree(labels, edge_weights, neighborhood):
     with nogil:
         for i in range(n_loops):
             edge_idx = ordered_indices[i]
-            # the size of ordered_indices is k times bigger than the amount of 
+            # the size of ordered_indices is k times bigger than the amount of
             # voxels, but the amount of merger edges is much smaller
 
             # get first voxel connected by the current edge
@@ -139,7 +146,7 @@ def build_tree(labels, edge_weights, neighborhood):
                 (not 0 <= w_2 < W) or
                 (not 0 <= h_2 < H)):
                 continue
-            
+
             orig_label_1 = merged_labels[d_1, w_1, h_1]
             orig_label_2 = merged_labels[d_2, w_2, h_2]
 
@@ -165,7 +172,7 @@ def build_tree(labels, edge_weights, neighborhood):
 
             # store parent edge of region by location in tree
             region_parents[new_label] = order_index
-            
+
             # increase index of next to be assigned element in edge_tree
             # this can't be incremented earlier, because lots of edges
             # that link to voxels that already belong to the same region
@@ -191,6 +198,4 @@ def compute_edge_cost(region_counts_1, region_counts_2, pos_neg_phase):
     else:
         raise("Specify pos_neg_phase as 'pos' or 'neg'")
     return cost
-
-
 

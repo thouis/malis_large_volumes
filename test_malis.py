@@ -59,7 +59,7 @@ def check_tree(edge_tree):
                     corresponding_depth.append(depth)
 
             elif et[index, 2] != -1:
-                # if there was a second child but no first one, take the second but 
+                # if there was a second child but no first one, take the second but
                 # don't add it to the list of neglected children
                 new_index = et[index, 2]
             else:
@@ -86,38 +86,36 @@ def check_tree(edge_tree):
 
 
 if __name__ == '__main__':
-    for sz in range(4, 8):
-        labels = np.empty((2 ** sz, 2 ** sz, 2 ** sz), dtype=np.uint32)
-        weights = np.random.normal(size=(2 ** sz, 2 ** sz, 2 ** sz, 3)).astype(dtype=np.float32)
-        neighborhood = np.zeros((3, 3), dtype=np.int32)
-        neighborhood[0, ...] = [1, 0, 0]
-        neighborhood[1, ...] = [0, 1, 0]
-        neighborhood[2, ...] = [0, 0, 1]
+    for depth_size in [30]:
+        labels = np.empty((depth_size, 1024, 1024), dtype=np.uint32)
+        weights = np.random.normal(size=(depth_size, 1024, 1024, 3)).astype(dtype=np.float32)
+        neighborhood = np.array([[1, 0, 0],
+                                 [0, 1, 0],
+                                 [0, 0, 1]], dtype=np.int32)
 
         print("\nImage is of size: " + str(labels.shape))
         #print(labels.size * labels.itemsize / float(2**30), "Gbytes")
 
-        # cython 
+        # cython
         print("\ncython:")
         start_time = time.time()
         edge_tree_cython = malis_cython.build_tree(labels, weights, neighborhood)
         end_time = time.time()
         print("Tree computation time: " + str(end_time - start_time))
         check_tree(edge_tree_cython)
-        start_time = time.time()
-        costs = malis_python.compute_costs(labels, weights, neighborhood, edge_tree_cython.copy(), "neg")
-        end_time = time.time()
-        print("Cost computation time: " + str(end_time - start_time))
-        print("Sum of costs: " + str(np.sum(costs)))
+#        start_time = time.time()
+#        pos_pairs, neg_pairs = malis_python.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
+#        end_time = time.time()
+#        print("Cost computation time: " + str(end_time - start_time))
 
-        # regular python
-        print("\nregular python:")
-        start_time = time.time()
-        edge_tree_python = malis_python.build_tree(labels, weights, neighborhood)
-        end_time = time.time()
-        print("Time: " + str(end_time - start_time))
-        check_tree(edge_tree_python)
-
+#        # regular python
+#        print("\nregular python:")
+#        start_time = time.time()
+#        edge_tree_python = malis_python.build_tree(labels, weights, neighborhood)
+#        end_time = time.time()
+#        print("Time: " + str(end_time - start_time))
+#        check_tree(edge_tree_python)
+#
 #        print("edge tree indices ")
 #        print(edge_tree[:10, 0])
 #        print("edge tree cython indices ")
@@ -130,6 +128,3 @@ if __name__ == '__main__':
 #        end_time = time.time()
 #        print("Cost computation time: " + str(end_time - start_time))
 #        print("Sum of costs: " + str(np.sum(costs)))
-
-
-
