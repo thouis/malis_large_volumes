@@ -4,8 +4,8 @@ import pdb
 cimport cython
 from cython.view cimport array as cvarray
 #from .argsort_int32 import qargsort32
-from malis_python import merge as merge_python
-from malis_python import chase as chase_python
+from .malis_python import merge as merge_python
+from .malis_python import chase as chase_python
 import sys
 from libcpp.unordered_map cimport unordered_map
 sys.setrecursionlimit(8000)

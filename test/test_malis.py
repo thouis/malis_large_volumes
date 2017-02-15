@@ -1,10 +1,11 @@
 import numpy as np
 import pdb
 import time
-import pyximport
-pyximport.install(setup_args={'include_dirs': [np.get_include()]})
-import malis_cython
-import malis_python
+#import pyximport
+#pyximport.install(setup_args={'include_dirs': [np.get_include()]})
+#import malis_cython
+#import malis_python
+from malis_large_volumes import malis_cython, malis_python
 
 
 def check_tree(edge_tree):
