@@ -174,6 +174,7 @@ def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
 
 
 def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
+    print("zomg")
     current_counts = np.zeros(shape=(10, 2))
 
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
@@ -218,12 +219,5 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
             continue
         compute_pairs_recursive(labels, edge_weights, neighborhood,
                                edge_tree, idx, pos_pairs, neg_pairs)
-
-    costs_array = np.zeros_like(edge_weights)
-
-    # mask to actual edges, put costs in place
-    costs = costs[linear_edge_indices > -1]
-    linear_edge_indices = linear_edge_indices[linear_edge_indices > -1]
-    costs_array.ravel()[linear_edge_indices] = costs
 
     return pos_pairs, neg_pairs

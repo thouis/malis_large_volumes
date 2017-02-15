@@ -186,19 +186,3 @@ def build_tree(labels, edge_weights, neighborhood):
     return np.asarray(edge_tree)
 
 
-def compute_edge_cost(region_counts_1, region_counts_2, pos_neg_phase):
-    cost = 0
-    if pos_neg_phase == "pos":
-        for key1, val1 in region_counts_1.iteritems():
-            for key2, val2 in region_counts_2.iteritems():
-                if key1 == key2:
-                    cost += val1 * val2
-    elif pos_neg_phase == "neg":
-        for key1, val1 in region_counts_1.iteritems():
-            for key2, val2 in region_counts_2.iteritems():
-                if key1 != key2:
-                    cost += val1 * val2
-    else:
-        raise("Specify pos_neg_phase as 'pos' or 'neg'")
-    return cost
-
