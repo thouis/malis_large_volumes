@@ -8,6 +8,7 @@ from argsort_int32 import qargsort32
 from malis_python import merge as merge_python
 from malis_python import chase as chase_python
 import sys
+from libcpp.unordered_map cimport unordered_map
 sys.setrecursionlimit(8000)
 
 
@@ -147,6 +148,7 @@ def build_tree(labels, edge_weights, neighborhood):
                 (not 0 <= h_2 < H)):
                 continue
 
+            # 
             orig_label_1 = merged_labels[d_1, w_1, h_1]
             orig_label_2 = merged_labels[d_2, w_2, h_2]
 
@@ -157,6 +159,7 @@ def build_tree(labels, edge_weights, neighborhood):
                 # already linked in tree, do not create a new edge.
                 continue
 
+            # make the entry in the edge tree
             edge_tree[order_index, 0] = edge_idx
             edge_tree[order_index, 1] = region_parents[region_label_1]
             edge_tree[order_index, 2] = region_parents[region_label_2]

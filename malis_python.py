@@ -219,11 +219,11 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
         compute_pairs_recursive(labels, edge_weights, neighborhood,
                                edge_tree, idx, pos_pairs, neg_pairs)
 
-#    costs_array = np.zeros_like(edge_weights)
-#
-#    # mask to actual edges, put costs in place
-#    costs = costs[linear_edge_indices > -1]
-#    linear_edge_indices = linear_edge_indices[linear_edge_indices > -1]
-#    costs_array.ravel()[linear_edge_indices] = costs
+    costs_array = np.zeros_like(edge_weights)
+
+    # mask to actual edges, put costs in place
+    costs = costs[linear_edge_indices > -1]
+    linear_edge_indices = linear_edge_indices[linear_edge_indices > -1]
+    costs_array.ravel()[linear_edge_indices] = costs
 
     return pos_pairs, neg_pairs

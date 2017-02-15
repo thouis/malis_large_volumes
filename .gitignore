@@ -1,5 +1,7 @@
 *.c
+*.cpp
 *~
 __pycache__
 *.html
 *.pyc
+build/

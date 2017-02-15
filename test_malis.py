@@ -86,9 +86,10 @@ def check_tree(edge_tree):
 
 
 if __name__ == '__main__':
-    for depth_size in [30]:
-        labels = np.empty((depth_size, 1024, 1024), dtype=np.uint32)
-        weights = np.random.normal(size=(depth_size, 1024, 1024, 3)).astype(dtype=np.float32)
+    for depth_size in [1]:
+        height_and_width = 128
+        labels = np.empty((depth_size, height_and_width, height_and_width), dtype=np.uint32)
+        weights = np.random.normal(size=(depth_size, height_and_width, height_and_width, 3)).astype(dtype=np.float32)
         neighborhood = np.array([[1, 0, 0],
                                  [0, 1, 0],
                                  [0, 0, 1]], dtype=np.int32)
@@ -104,7 +105,7 @@ if __name__ == '__main__':
         print("Tree computation time: " + str(end_time - start_time))
         check_tree(edge_tree_cython)
 #        start_time = time.time()
-#        pos_pairs, neg_pairs = malis_python.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
+#        pos_pairs, neg_pairs = malis_python.compute_costs(labels, weights, neighborhood, edge_tree_cython.copy(), "pos")
 #        end_time = time.time()
 #        print("Cost computation time: " + str(end_time - start_time))
 
