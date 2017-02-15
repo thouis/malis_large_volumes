@@ -9,7 +9,7 @@ import numpy as np
 ext_modules = [Extension("malis_large_volumes.malis_cython",
                ["malis_large_volumes/malis_cython.pyx"],
                language='c++',
-               extra_compile_args=["-std=c++11"],
+               extra_compile_args=["-std=c++14"],
                extra_link_args=["-std=c++14"],
                include_dirs=[np.get_include()])]
 
@@ -17,5 +17,5 @@ setup(name="malis_large_volumes",
       version="0.0.1",
       cmdclass = {'build_ext': build_ext},
       ext_modules=ext_modules,
-      packages=find_packages()
+      packages=["malis_large_volumes"]
 )

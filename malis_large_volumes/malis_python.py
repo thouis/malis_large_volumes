@@ -2,7 +2,7 @@ import numpy as np
 import pdb
 import pyximport
 pyximport.install(setup_args={'include_dirs': [np.get_include()]})
-from argsort_int32 import qargsort32
+from .argsort_int32 import qargsort32
 import sys
 sys.setrecursionlimit(8000)
 

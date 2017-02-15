@@ -1,10 +1,9 @@
 import numpy as np
 cimport numpy as np
-from libc.stdint cimport uint32_t
 import pdb
 cimport cython
 from cython.view cimport array as cvarray
-from argsort_int32 import qargsort32
+#from .argsort_int32 import qargsort32
 from malis_python import merge as merge_python
 from malis_python import chase as chase_python
 import sys
