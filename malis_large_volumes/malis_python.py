@@ -174,7 +174,6 @@ def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
 
 
 def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
-    print("zomg")
     current_counts = np.zeros(shape=(10, 2))
 
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
