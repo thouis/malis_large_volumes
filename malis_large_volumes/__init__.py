@@ -1,6 +1,7 @@
-from .malis_cython import build_tree
+import numpy as np
+#from .malis_cython import build_tree
 # DEBUG should later be malis_cython
-from .malis_python import compute_pairs
+from .malis_python import compute_pairs, build_tree
 
 def pairs(labels, edge_weights, neighborhood=None):
     """
