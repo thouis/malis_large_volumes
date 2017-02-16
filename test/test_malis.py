@@ -5,6 +5,7 @@ import time
 #pyximport.install(setup_args={'include_dirs': [np.get_include()]})
 #import malis_cython
 #import malis_python
+import malis_large_volumes
 from malis_large_volumes import malis_cython, malis_python
 
 
@@ -98,6 +99,8 @@ if __name__ == '__main__':
         print("\nImage is of size: " + str(labels.shape))
         #print(labels.size * labels.itemsize / float(2**30), "Gbytes")
 
+
+        import pdb; pdb.set_trace()
         # cython
         print("\ncython:")
         start_time = time.time()
@@ -109,6 +112,10 @@ if __name__ == '__main__':
         pos_pairs, neg_pairs = malis_python.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
         end_time = time.time()
         print("Pair computation time: " + str(end_time - start_time))
+
+        # test meta method that combines tree and pair computation
+        print("Testing convenience function pairs()")
+        pos_pairs, neg_pairs = pairs(labels, weights, neighborhood)
 
 #        # regular python
 #        print("\nregular python:")

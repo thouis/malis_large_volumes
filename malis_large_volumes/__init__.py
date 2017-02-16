@@ -7,7 +7,7 @@ def pairs(labels, edge_weights, neighborhood=None):
     This function simply combines the build_tree and compute_pairs functions
     """
 
-    if not neighborhood:
+    if neighborhood is None:
         print("No neighboorhood provided, using 3d NN neighboorhood")
         neighborhood = np.array([[1, 0, 0],
                                  [0, 1, 0],
