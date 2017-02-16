@@ -174,7 +174,6 @@ def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
 
 
 def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
-    current_counts = np.zeros(shape=(10, 2))
 
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
     assert linear_edge_index != -1  # also marks visited nodes
@@ -201,13 +200,22 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
     # mark this edge as done so recursion doesn't hit it again
     edge_tree[edge_tree_idx, 0] = -1
 
+    d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
+    return_dict = {}
+    for key1, item1 in region_counts_1.items():
+        for key2, item2 in region_counts_2.items():
+            if key1 == key2:
+                pos_pairs[d_1, w_1, h_1, k] = item1 * item2
+            else:
+                neg_pairs[d_1, w_1, h_1, k] = item1 * item2
+            return_dict[key1] = item1 + item2
     region_counts_1.update(region_counts_2)
     return region_counts_1
 
 
 def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
-    pos_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint32)
-    neg_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint32)
+    pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
+    neg_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
 
     # save these for later.
     linear_edge_indices = edge_tree[:, 0].copy()
