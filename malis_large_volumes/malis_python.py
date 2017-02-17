@@ -209,8 +209,7 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
             else:
                 neg_pairs[d_1, w_1, h_1, k] = item1 * item2
             return_dict[key1] = item1 + item2
-    region_counts_1.update(region_counts_2)
-    return region_counts_1
+    return return_dict
 
 
 def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
