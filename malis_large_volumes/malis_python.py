@@ -199,7 +199,6 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
     # mark this edge as done so recursion doesn't hit it again
     edge_tree[edge_tree_idx, 0] = -1
 
-    d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
     return_dict = {}
     for key1, item1 in region_counts_1.items():
         for key2, item2 in region_counts_2.items():

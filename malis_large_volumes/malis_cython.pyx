@@ -191,7 +191,7 @@ cdef unordered_map[int, int] compute_pairs_recursive(int[:, :, :] labels,
                                            int edge_tree_idx, pos_pairs, neg_pairs):
     cdef int child_1, child_2
     cdef int return_idxes[4]
-    cdef unordered_map[int, int] region_counts_1, region_counts_2
+    cdef unordered_map[int, int] region_counts_1, region_counts_2, return_dict
 
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, :]
     my_unravel_index(linear_edge_index, ew_shape, return_idxes)
@@ -224,16 +224,14 @@ cdef unordered_map[int, int] compute_pairs_recursive(int[:, :, :] labels,
     # mark this edge as done so recursion doesn't hit it again
     edge_tree[edge_tree_idx, 0] = -1
 
-#    d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
-#    return_dict = {}
-#    for key1, item1 in region_counts_1.items():
-#        for key2, item2 in region_counts_2.items():
-#            if key1 == key2:
-#                pos_pairs[d_1, w_1, h_1, k] = item1 * item2
-#            else:
-#                neg_pairs[d_1, w_1, h_1, k] = item1 * item2
-#            return_dict[key1] = item1 + item2
-    return region_counts_1
+    for key1, item1 in region_counts_1.items():
+        for key2, item2 in region_counts_2.items():
+            if key1 == key2:
+                pos_pairs[d_1, w_1, h_1, k] = item1 * item2
+            else:
+                neg_pairs[d_1, w_1, h_1, k] = item1 * item2
+            return_dict[key1] = item1 + item2
+    return return_dict
 
 
 def compute_pairs(labels, edge_weights, neighborhood, edge_tree):

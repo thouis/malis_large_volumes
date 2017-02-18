@@ -12,7 +12,7 @@ neighborhood = np.array([[1, 0, 0],
                          [0, 0, 1]], dtype=np.int32)
 
 edge_tree = malis_cython.build_tree(labels, weights, neighborhood)
-pos_pairs, neg_pairs = malis_python.compute_pairs(labels, weights, neighborhood, edge_tree)
+pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree)
 import pdb; pdb.set_trace()
 
 
