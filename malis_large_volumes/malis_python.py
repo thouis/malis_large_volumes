@@ -176,10 +176,10 @@ def compute_costs(labels, edge_weights, neighborhood, edge_tree, pos_neg_phase):
 def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
 
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
+    d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
     assert linear_edge_index != -1  # also marks visited nodes
     if child_1 == -1:
         # first child is a voxel.  Compute its location
-        d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
         region_counts_1 = {labels[d_1, w_1, h_1]: 1}
     else:
         # recurse first child
@@ -188,7 +188,6 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
 
     if child_2 == -1:
         # second child is a voxel.  Compute its location via neighborhood.
-        d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
         offset = neighborhood[k, ...]
         d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
         region_counts_2 = {labels[d_2, w_2, h_2]: 1}
