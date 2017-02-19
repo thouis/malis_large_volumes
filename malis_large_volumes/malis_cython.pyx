@@ -189,7 +189,9 @@ cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
                                                 int[::1] ew_shape,
                                                 int[:, :] neighborhood, 
                                                 int[:, :] edge_tree, 
-                                                int edge_tree_idx, pos_pairs, neg_pairs) nogil:
+                                                int edge_tree_idx, 
+                                                unsigned int[:, :, :, :] pos_pairs, 
+                                                unsigned int[:, :, :, :] neg_pairs) nogil:
     cdef int linear_edge_index, child_1, child_2
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
     cdef int return_idxes[4]
@@ -230,15 +232,14 @@ cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
 
     # mark this edge as done so recursion doesn't hit it again
     edge_tree[edge_tree_idx, 0] = -1
+    for item1 in region_counts_1:
+        for item2 in region_counts_2:
 
-    for key1 in region_counts_1.keys():
-        item1 = region_counts_1[key1]
-        for key2, item2 in region_counts_2.items():
-            if key1 == key2:
-                pos_pairs[d_1, w_1, h_1, k] = item1 * item2
+            if item1.first == item2.first:
+                pos_pairs[d_1, w_1, h_1, k] = item1.second * item2.second
             else:
-                neg_pairs[d_1, w_1, h_1, k] = item1 * item2
-            return_dict[key1] = item1 + item2
+                neg_pairs[d_1, w_1, h_1, k] = item1.second * item2.second
+            return_dict[item1.first] = item1.second + item2.second
     return return_dict
 
 
@@ -256,7 +257,8 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
     for idx in range(edge_tree.shape[0] - 1, 0, -1):
         if edge_tree[idx, 0] == -1:
             continue
-        compute_pairs_recursive(labels_view, ew_shape, neighborhood_view,
-                               edge_tree_view, idx, pos_pairs, neg_pairs)
+        with nogil:
+            compute_pairs_recursive(labels_view, ew_shape, neighborhood_view,
+                                   edge_tree_view, idx, pos_pairs, neg_pairs)
 
     return np.array(pos_pairs), np.array(neg_pairs)

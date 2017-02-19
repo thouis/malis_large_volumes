@@ -88,7 +88,7 @@ def check_tree(edge_tree):
 
 
 if __name__ == '__main__':
-    for depth_size in [3]:
+    for depth_size in [1]:
         height_and_width = 128
         labels = np.empty((depth_size, height_and_width, height_and_width), dtype=np.uint32)
         weights = np.random.normal(size=(depth_size, height_and_width, height_and_width, 3)).astype(dtype=np.float32)
