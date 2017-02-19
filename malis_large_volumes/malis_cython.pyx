@@ -184,11 +184,11 @@ def build_tree(labels, edge_weights, neighborhood):
 ########################################################################################
 # compute pairs (instead of costs) methods
 
-cdef unordered_map[int, int] compute_pairs_recursive(int[:, :, :] labels,
-                                           int[::1] ew_shape,
-                                           int[:, :] neighborhood, 
-                                           int[:, :] edge_tree, 
-                                           int edge_tree_idx, pos_pairs, neg_pairs):
+cdef unordered_map[int, int] compute_pairs_recursive(unsigned int[:, :, :] labels,
+                                                     int[::1] ew_shape,
+                                                     int[:, :] neighborhood, 
+                                                     int[:, :] edge_tree, 
+                                                     int edge_tree_idx, pos_pairs, neg_pairs):
     cdef int child_1, child_2
     cdef int return_idxes[4]
     cdef unordered_map[int, int] region_counts_1, region_counts_2, return_dict
@@ -235,16 +235,13 @@ cdef unordered_map[int, int] compute_pairs_recursive(int[:, :, :] labels,
 
 
 def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
-    cdef int [:, :, :] labels_view = labels
+    cdef unsigned int [:, :, :] labels_view = labels
     cdef int [:, :] neighborhood_view = neighborhood
     print("Made it here")
     cdef int [:, :] edge_tree_view = edge_tree
     cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
     cdef unsigned int [:, :, :, :] pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
     cdef unsigned int [:, :, :, :] neg_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
-
-#    # save these for later.
-#    linear_edge_indices = edge_tree[:, 0].copy()
 
     # process tree from root (later in array) to leaves (earlier)
     cdef int idx
@@ -254,4 +251,4 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
         compute_pairs_recursive(labels_view, ew_shape, neighborhood_view,
                                edge_tree_view, idx, pos_pairs, neg_pairs)
 
-    return pos_pairs, neg_pairs
+    return np.array(pos_pairs), np.array(neg_pairs)

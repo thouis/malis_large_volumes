@@ -88,7 +88,7 @@ def check_tree(edge_tree):
 
 
 if __name__ == '__main__':
-    for depth_size in [2]:
+    for depth_size in [3]:
         height_and_width = 128
         labels = np.empty((depth_size, height_and_width, height_and_width), dtype=np.uint32)
         weights = np.random.normal(size=(depth_size, height_and_width, height_and_width, 3)).astype(dtype=np.float32)
@@ -100,7 +100,6 @@ if __name__ == '__main__':
         #print(labels.size * labels.itemsize / float(2**30), "Gbytes")
 
 
-        import pdb; pdb.set_trace()
         # cython
         print("\ncython:")
         start_time = time.time()
@@ -109,13 +108,13 @@ if __name__ == '__main__':
         print("Tree computation time: " + str(end_time - start_time))
         check_tree(edge_tree_cython)
         start_time = time.time()
-        pos_pairs, neg_pairs = malis_python.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
+        pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
         end_time = time.time()
         print("Pair computation time: " + str(end_time - start_time))
 
         # test meta method that combines tree and pair computation
-        print("Testing convenience function pairs()")
-        pos_pairs, neg_pairs = pairs(labels, weights, neighborhood)
+#        print("Testing convenience function pairs()")
+#        pos_pairs, neg_pairs = pairs(labels, weights, neighborhood)
 
 #        # regular python
 #        print("\nregular python:")
