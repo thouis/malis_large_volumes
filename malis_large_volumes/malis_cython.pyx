@@ -184,16 +184,23 @@ def build_tree(labels, edge_weights, neighborhood):
 ########################################################################################
 # compute pairs (instead of costs) methods
 
-cdef unordered_map[int, int] compute_pairs_recursive(unsigned int[:, :, :] labels,
-                                                     int[::1] ew_shape,
-                                                     int[:, :] neighborhood, 
-                                                     int[:, :] edge_tree, 
-                                                     int edge_tree_idx, pos_pairs, neg_pairs):
-    cdef int child_1, child_2
+cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
+                                                unsigned int[:, :, :] labels,
+                                                int[::1] ew_shape,
+                                                int[:, :] neighborhood, 
+                                                int[:, :] edge_tree, 
+                                                int edge_tree_idx, pos_pairs, neg_pairs) nogil:
+    cdef int linear_edge_index, child_1, child_2
+    cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
     cdef int return_idxes[4]
-    cdef unordered_map[int, int] region_counts_1, region_counts_2, return_dict
+    cdef int[:] offset
+    cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2, return_dict
 
-    linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, :]
+
+
+    linear_edge_index = edge_tree[edge_tree_idx, 0]
+    child_1 = edge_tree[edge_tree_idx, 1]
+    child_2 = edge_tree[edge_tree_idx, 2]
     my_unravel_index(linear_edge_index, ew_shape, return_idxes)
     d_1 = return_idxes[0]
     w_1 = return_idxes[1]
@@ -207,7 +214,7 @@ cdef unordered_map[int, int] compute_pairs_recursive(unsigned int[:, :, :] label
     else:
         # recurse first child
         region_counts_1 = compute_pairs_recursive(labels, ew_shape, neighborhood,
-                                                 edge_tree, child_1, pos_pairs, neg_pairs)
+                                                  edge_tree, child_1, pos_pairs, neg_pairs)
 
     if child_2 == -1:
         # second child is a voxel.  Compute its location via neighborhood.
@@ -219,12 +226,13 @@ cdef unordered_map[int, int] compute_pairs_recursive(unsigned int[:, :, :] label
     else:
         # recurse second child
         region_counts_2 = compute_pairs_recursive(labels, ew_shape, neighborhood,
-                                                 edge_tree, child_2, pos_pairs, neg_pairs)
+                                                  edge_tree, child_2, pos_pairs, neg_pairs)
 
     # mark this edge as done so recursion doesn't hit it again
     edge_tree[edge_tree_idx, 0] = -1
 
-    for key1, item1 in region_counts_1.items():
+    for key1 in region_counts_1.keys():
+        item1 = region_counts_1[key1]
         for key2, item2 in region_counts_2.items():
             if key1 == key2:
                 pos_pairs[d_1, w_1, h_1, k] = item1 * item2
