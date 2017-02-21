@@ -1,10 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import pdb
 import time
-#import pyximport
-#pyximport.install(setup_args={'include_dirs': [np.get_include()]})
-#import malis_cython
-#import malis_python
 import malis_large_volumes
 from malis_large_volumes import malis_cython, malis_python
 
@@ -88,10 +85,34 @@ def check_tree(edge_tree):
 
 
 if __name__ == '__main__':
-    for depth_size in [1]:
-        height_and_width = 128
+    depth_size_range = [60]
+    max_stack_vec = np.zeros(len(depth_size_range))
+    vol_size_vec = np.zeros(len(depth_size_range))
+    height_and_width = 1000
+
+    for i, depth_size in enumerate(depth_size_range):
         labels = np.empty((depth_size, height_and_width, height_and_width), dtype=np.uint32)
-        weights = np.random.normal(size=(depth_size, height_and_width, height_and_width, 3)).astype(dtype=np.float32)
+        vol_size_vec[i] = labels.size
+
+        # we want the weights to alternate between high an low throughout the volume in order to 
+        # create blobs
+        alternator = 0
+        weights = np.random.normal(size=(depth_size, height_and_width, height_and_width, 3), scale=.1).astype(dtype=np.float32)
+        for j in range(0, np.max(weights.shape), 100):
+            if alternator == 0:
+                try:
+                    weights[int(j/20)] -= 1 # this is hacky
+                except:
+                    pass
+                try:
+                    weights[:, j] -= 1
+                except:
+                    pass
+                try:
+                    weights[:, :, j] -= 1
+                except:
+                    pass
+            
         neighborhood = np.array([[1, 0, 0],
                                  [0, 1, 0],
                                  [0, 0, 1]], dtype=np.int32)
@@ -106,11 +127,23 @@ if __name__ == '__main__':
         edge_tree_cython = malis_cython.build_tree(labels, weights, neighborhood)
         end_time = time.time()
         print("Tree computation time: " + str(end_time - start_time))
-        check_tree(edge_tree_cython)
+#        check_tree(edge_tree_cython)
         start_time = time.time()
-        pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
+#        pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
+        max_stack = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
+        max_stack_vec[i] = max_stack
+        print("Max stack: " + str(max_stack))
         end_time = time.time()
         print("Pair computation time: " + str(end_time - start_time))
+
+        import malis.malis_pair_wrapper as malis_pair_wrapper
+        pos_pairs_2, neg_pairs_2 = malis_pair_wrapper.get_counts(weights, labels)
+
+    plt.figure()
+    plt.plot(vol_size_vec, max_stack_vec)
+    plt.xlabel("Number of voxels")
+    plt.ylabel("Maximal tree depth")
+    plt.show()
 
         # test meta method that combines tree and pair computation
 #        print("Testing convenience function pairs()")
