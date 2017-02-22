@@ -3,95 +3,20 @@ import matplotlib.pyplot as plt
 import pdb
 import time
 import malis_large_volumes
+from test_tools import check_tree
 from malis_large_volumes import malis_cython, malis_python
 
 
-def check_tree(edge_tree):
-    # create alias
-    et = edge_tree
-
-    # check that no parent occurs more than once
-    unique_idxes, unique_counts = np.unique(et[:, 0], return_counts=True)
-    # -1 is allowed to occur more than once, so we set it to 1 here
-    unique_counts[unique_idxes==-1] = 1
-    assert(np.all(unique_counts == 1))
-
-    # check that no child occurs more than once
-    unique_idxes, unique_counts = np.unique(et[:, [1,2]], return_counts=True)
-    # -1 is allowed to occur more than once, so we set it to 1 here
-    unique_counts[unique_idxes==-1] = 1
-    assert np.all(unique_counts == 1), "at least one child occurred more than once"
-
-    # check that no non-parent (value -1) has children that are non-voxels (non -1)
-    assert np.all(et[et[:, 0] == -1, 1] == -1), "non-parent has non-voxel children"
-    assert np.all(et[et[:, 0] == -1, 2] == -1), "non-parent has non-voxel children"
-
-
-    # traverse the tree non-recursively to check whether all indices are visited
-    # and whether any index is visited twice
-    visited_indices = set()
-    index = len(et) -1
-    while index >= 0:
-        # choose new index
-        if index in visited_indices or et[index, 0] == -1:
-            index -= 1
-            continue
-
-        print("Traversing a tree!")
-        depth = 1
-        max_depth = 1
-        neglected_second_children = []
-        corresponding_depth = []
-        while index != -1:
-
-            # check that we haven't visited this index before
-            assert index not in visited_indices, "index " + str(index) + " was visited twice"
-            # add this index to visited
-            visited_indices.add(index)
-
-            if et[index, 1] != -1:
-                # take the first child
-                new_index = et[index, 1]
-                # check if there was a second non-voxel child, if so add it to our list
-                if et[index, 2] != -1:
-                    neglected_second_children.append(et[index, 2])
-                    corresponding_depth.append(depth)
-
-            elif et[index, 2] != -1:
-                # if there was a second child but no first one, take the second but
-                # don't add it to the list of neglected children
-                new_index = et[index, 2]
-            else:
-                if len(neglected_second_children) > 0:
-                    new_index = neglected_second_children[-1]
-                    depth = corresponding_depth[-1]
-                    neglected_second_children.pop()
-                    corresponding_depth.pop()
-                else:
-                    new_index = -1
-
-            # update the index
-            index = new_index
-            depth += 1
-            if depth > max_depth:
-                max_depth = depth
-    print("Finished traversing tree, maximum depth was: " + str(max_depth))
-
-    # check that all elements were visited
-    relevant_indices = np.where(et[:, 0] != -1)[0]
-    assert set(relevant_indices.tolist()).issubset(visited_indices), "not all indices were visited while traversing the tree"
-
-    print("Finished checking tree, no problems found")
 
 
 if __name__ == '__main__':
-    depth_size_range = [60]
-    max_stack_vec = np.zeros(len(depth_size_range))
+    depth_size_range = [5]
+#    max_stack_vec = np.zeros(len(depth_size_range))
     vol_size_vec = np.zeros(len(depth_size_range))
     height_and_width = 1000
 
     for i, depth_size in enumerate(depth_size_range):
-        labels = np.empty((depth_size, height_and_width, height_and_width), dtype=np.uint32)
+        labels = np.ones((depth_size, height_and_width, height_and_width), dtype=np.uint32)
         vol_size_vec[i] = labels.size
 
         # we want the weights to alternate between high an low throughout the volume in order to 
@@ -129,21 +54,29 @@ if __name__ == '__main__':
         print("Tree computation time: " + str(end_time - start_time))
 #        check_tree(edge_tree_cython)
         start_time = time.time()
-#        pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
-        max_stack = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
-        max_stack_vec[i] = max_stack
-        print("Max stack: " + str(max_stack))
+        pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
+#        max_stack_vec[i] = max_stack
+#        print("Max stack: " + str(max_stack))
         end_time = time.time()
         print("Pair computation time: " + str(end_time - start_time))
 
+        ######################################################################
+        # Compare with S. Turagas malis implementation
         import malis.malis_pair_wrapper as malis_pair_wrapper
-        pos_pairs_2, neg_pairs_2 = malis_pair_wrapper.get_counts(weights, labels)
+        # swap axes to conform with array layout in other implementation
+        weights_axes_swapped = np.swapaxes(weights, 0, 3)
+        labels_axes_swapped = np.swapaxes(labels, 0, 2)
+        pos_pairs_2, neg_pairs_2 = malis_pair_wrapper.get_counts(weights_axes_swapped, 
+                                                                 labels_axes_swapped.astype(np.int64))
+        pos_pairs_2 = np.swapaxes(pos_pairs_2, 0, 3)
+        neg_pairs_2 = np.swapaxes(neg_pairs_2, 0, 3)
+        import pdb; pdb.set_trace()
 
-    plt.figure()
-    plt.plot(vol_size_vec, max_stack_vec)
-    plt.xlabel("Number of voxels")
-    plt.ylabel("Maximal tree depth")
-    plt.show()
+#    plt.figure()
+#    plt.plot(vol_size_vec, max_stack_vec)
+#    plt.xlabel("Number of voxels")
+#    plt.ylabel("Maximal tree depth")
+#    plt.show()
 
         # test meta method that combines tree and pair computation
 #        print("Testing convenience function pairs()")

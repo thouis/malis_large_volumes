@@ -246,7 +246,6 @@ cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
 def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
     cdef unsigned int [:, :, :] labels_view = labels
     cdef int [:, :] neighborhood_view = neighborhood
-    print("Made it here")
     cdef int [:, :] edge_tree_view = edge_tree
     cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
     cdef unsigned int [:, :, :, :] pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
