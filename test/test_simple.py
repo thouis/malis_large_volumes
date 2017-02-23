@@ -58,7 +58,7 @@ print("Test 2 finished, no error")
 # TEST 3
 print("Starting test 2")
 # in this test we're just comparing the current implementation and Turagas
-labels = np.random.randint(0, 100, size=(10, 10, 10), dtype=np.uint32)
+labels = np.random.randint(0, 10, size=(5, 5, 5), dtype=np.uint32)
 weights = np.random.normal(loc=0.5, scale=0.1, size=labels.shape + (3,)).astype(np.float)
 
 edge_tree = malis_cython.build_tree(labels, weights, neighborhood)

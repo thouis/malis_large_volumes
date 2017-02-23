@@ -232,14 +232,29 @@ cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
 
     # mark this edge as done so recursion doesn't hit it again
     edge_tree[edge_tree_idx, 0] = -1
+
     for item1 in region_counts_1:
         for item2 in region_counts_2:
 
             if item1.first == item2.first:
-                pos_pairs[d_1, w_1, h_1, k] = item1.second * item2.second
+                pos_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
             else:
-                neg_pairs[d_1, w_1, h_1, k] = item1.second * item2.second
-            return_dict[item1.first] = item1.second + item2.second
+                neg_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
+
+    for item1 in region_counts_1:
+        if return_dict.count(item1.first) == 1:
+            return_dict[item1.first] += item1.second
+        else:
+            return_dict[item1.first] = item1.second
+
+    
+    for item2 in region_counts_2:
+        if return_dict.count(item2.first) == 1:
+            return_dict[item2.first] += item2.second
+        else:
+            return_dict[item2.first] = item2.second
+
+
     return return_dict
 
 
