@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import pdb
 import time
 import malis_large_volumes
-from test_tools import check_tree
+from test_tools import check_tree, malis_turaga
 from malis_large_volumes import malis_cython, malis_python
 
 
 
 
 if __name__ == '__main__':
-    depth_size_range = [5]
+    depth_size_range = [3]
 #    max_stack_vec = np.zeros(len(depth_size_range))
     vol_size_vec = np.zeros(len(depth_size_range))
     height_and_width = 1000
@@ -62,14 +62,8 @@ if __name__ == '__main__':
 
         ######################################################################
         # Compare with S. Turagas malis implementation
-        import malis.malis_pair_wrapper as malis_pair_wrapper
         # swap axes to conform with array layout in other implementation
-        weights_axes_swapped = np.swapaxes(weights, 0, 3)
-        labels_axes_swapped = np.swapaxes(labels, 0, 2)
-        pos_pairs_2, neg_pairs_2 = malis_pair_wrapper.get_counts(weights_axes_swapped, 
-                                                                 labels_axes_swapped.astype(np.int64))
-        pos_pairs_2 = np.swapaxes(pos_pairs_2, 0, 3)
-        neg_pairs_2 = np.swapaxes(neg_pairs_2, 0, 3)
+        pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels)
         import pdb; pdb.set_trace()
 
 #    plt.figure()

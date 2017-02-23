@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import malis.malis_pair_wrapper as malis_pairs_wrapper_turaga
 
 def check_tree(edge_tree):
     # create alias
@@ -77,3 +78,11 @@ def check_tree(edge_tree):
     assert set(relevant_indices.tolist()).issubset(visited_indices), "not all indices were visited while traversing the tree"
 
     print("Finished checking tree, no problems found")
+
+def malis_turaga(weights, labels):
+        weights_axes_swapped = np.swapaxes(weights, 0, 3)
+        pos_pairs, neg_pairs = malis_pairs_wrapper_turaga.get_counts(weights_axes_swapped, 
+                                                                 labels.astype(np.int64))
+        pos_pairs = np.swapaxes(pos_pairs, 0, 3)
+        neg_pairs = np.swapaxes(neg_pairs, 0, 3)
+        return pos_pairs, neg_pairs
