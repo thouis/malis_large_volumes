@@ -45,6 +45,7 @@ weights[2, 1, 1, 0]  = .4 # this is the maximin edge between the two objects
 
 edge_tree = malis_cython.build_tree(labels, weights, neighborhood)
 pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree)
+assert neg_pairs[2, 1, 1, 0] == (2 * 3 * 3) ** 2
 
 ########################################################
 # compare with turagas implementation
