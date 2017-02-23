@@ -22,9 +22,8 @@ edge_tree = malis_cython.build_tree(labels, weights, neighborhood)
 pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree)
 assert neg_pairs[0, 0, 3, 2] == 9, "neg pairs result was incorrect"
 
-########################################################
 # compare with turagas implementation
-pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=True)
+pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
 assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
 assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
 
@@ -47,10 +46,29 @@ edge_tree = malis_cython.build_tree(labels, weights, neighborhood)
 pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree)
 assert neg_pairs[2, 1, 1, 0] == (2 * 3 * 3) ** 2
 
-########################################################
 # compare with turagas implementation
 pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels)
-assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
 assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
+assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
 
 print("Test 2 finished, no error")
+
+
+#######################################################
+# TEST 3
+print("Starting test 2")
+# in this test we're just comparing the current implementation and Turagas
+labels = np.random.randint(0, 100, size=(10, 10, 10), dtype=np.uint32)
+weights = np.random.normal(loc=0.5, scale=0.1, size=labels.shape + (3,)).astype(np.float)
+
+edge_tree = malis_cython.build_tree(labels, weights, neighborhood)
+pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree)
+
+# compare with turagas implementation
+pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
+assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
+assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
+
+print("Test 3 finished, no error")
+
+#######################################################

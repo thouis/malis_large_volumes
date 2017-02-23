@@ -17,12 +17,13 @@ if __name__ == '__main__':
 
     for i, depth_size in enumerate(depth_size_range):
         labels = np.ones((depth_size, height_and_width, height_and_width), dtype=np.uint32)
+        labels[2:] = 2
         labels[int(depth_size/2):, int(height_and_width/2):] = 5
         vol_size_vec[i] = labels.size
 
         # we want the weights to alternate between high an low throughout the volume in order to 
         # create blobs
-        weights = np.random.normal(size=labels.shape + (3,), loc=.5, scale=.01).astype(dtype=np.float32)
+        weights = np.random.normal(size=labels.shape + (3,), loc=.5, scale=.1).astype(dtype=np.float32)
         for j in range(0, np.max(weights.shape), 100):
             try:
                 weights[int(j/20)] -= .1 # this is hacky
