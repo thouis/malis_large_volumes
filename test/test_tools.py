@@ -79,10 +79,11 @@ def check_tree(edge_tree):
 
     print("Finished checking tree, no problems found")
 
-def malis_turaga(weights, labels):
-        weights_axes_swapped = np.swapaxes(weights, 0, 3)
+def malis_turaga(weights, labels, ignore_background=False):
+        weights_axes_swapped = np.moveaxis(weights, 3, 0)
         pos_pairs, neg_pairs = malis_pairs_wrapper_turaga.get_counts(weights_axes_swapped, 
-                                                                 labels.astype(np.int64))
-        pos_pairs = np.swapaxes(pos_pairs, 0, 3)
-        neg_pairs = np.swapaxes(neg_pairs, 0, 3)
+                                                                 labels.astype(np.int64),
+                                                                 ignore_background=ignore_background)
+        pos_pairs = np.moveaxis(pos_pairs, 0, 3)
+        neg_pairs = np.moveaxis(neg_pairs, 0, 3)
         return pos_pairs, neg_pairs
