@@ -13,7 +13,7 @@ if __name__ == '__main__':
     depth_size_range = [4]
 #    max_stack_vec = np.zeros(len(depth_size_range))
     vol_size_vec = np.zeros(len(depth_size_range))
-    height_and_width = 5
+    height_and_width = 3
 
     for i, depth_size in enumerate(depth_size_range):
         labels = np.ones((depth_size, height_and_width, height_and_width), dtype=np.uint32)
@@ -22,22 +22,20 @@ if __name__ == '__main__':
 
         # we want the weights to alternate between high an low throughout the volume in order to 
         # create blobs
-        alternator = 0
         weights = np.random.normal(size=labels.shape + (3,), loc=.5, scale=.01).astype(dtype=np.float32)
         for j in range(0, np.max(weights.shape), 100):
-            if alternator == 0:
-                try:
-                    weights[int(j/20)] -= .1 # this is hacky
-                except:
-                    pass
-                try:
-                    weights[:, j] -= .1
-                except:
-                    pass
-                try:
-                    weights[:, :, j] -= .1
-                except:
-                    pass
+            try:
+                weights[int(j/20)] -= .1 # this is hacky
+            except:
+                pass
+            try:
+                weights[:, j] -= .1
+            except:
+                pass
+            try:
+                weights[:, :, j] -= .1
+            except:
+                pass
             
         neighborhood = np.array([[-1, 0, 0],
                                  [0, -1, 0],
@@ -59,7 +57,7 @@ if __name__ == '__main__':
 
         ######################################################################
         # Compare with S. Turagas malis implementation
-        pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels)
+        pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
         print(pos_pairs[1, 1, 1, 0])
         print(pos_pairs_2[1, 1, 1, 0])
         import pdb; pdb.set_trace()
