@@ -242,10 +242,7 @@ cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
                 neg_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
 
     for item1 in region_counts_1:
-        if return_dict.count(item1.first) == 1:
-            return_dict[item1.first] += item1.second
-        else:
-            return_dict[item1.first] = item1.second
+        return_dict[item1.first] = item1.second
 
     
     for item2 in region_counts_2:
