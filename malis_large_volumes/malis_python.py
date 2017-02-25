@@ -116,7 +116,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
     stack.append(stackentry)
 
     while len(stack) > 0:
-        print("Length of stack: " + str(len(stack)))
         stackentry = stack[-1]
 
 
@@ -140,7 +139,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         elif stackentry["child_1_status"] == 1:
             stackentry["region_counts_1"] = return_dict
             stackentry["child_1_status"] = 2
-        print("after recursing 1")
 
 
         ########################################################################
@@ -163,15 +161,16 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
                 continue
         elif stackentry["child_2_status"] == 1:
             region_counts_2 = return_dict
-        print("after recursing 2")
 
 
+        linear_edge_index, child_1, child_2 = edge_tree[stackentry["edge_tree_idx"], ...]
+        d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
 
         # syntactic sugar for below
         region_counts_1 = stackentry["region_counts_1"]
 
         # mark this edge as done so recursion doesn't hit it again
-        edge_tree[edge_tree_idx, 0] = -1
+        edge_tree[stackentry["edge_tree_idx"], 0] = -1
 
         return_dict = {}
         for key1, counts1 in region_counts_1.items():
@@ -190,7 +189,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
                 return_dict[key2] += counts2
             else:
                 return_dict[key2] = counts2
-        print("end. popping now.")
         stack.pop()
 
         
