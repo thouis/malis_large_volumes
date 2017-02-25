@@ -99,6 +99,102 @@ def build_tree(labels, edge_weights, neighborhood):
 ########################################################################################
 # compute pairs (instead of costs) methods
 
+def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
+
+    stack = []
+    stackentry_template = {
+            "edge_tree_idx": 0,
+            "child_1_status": 0,
+            "child_2_status": 0,
+            "region_counts_1": {},
+            "region_counts_2": {}
+    }
+
+    # add first stackentry to stack
+    stackentry = stackentry_template.copy()
+    stackentry["edge_tree_idx"] = edge_tree_idx
+    stack.append(stackentry)
+
+    while len(stack) > 0:
+        print("Length of stack: " + str(len(stack)))
+        stackentry = stack[-1]
+
+
+        ########################################################################
+        # Child 1
+        if stackentry["child_1_status"] == 0:
+            linear_edge_index, child_1, child_2 = edge_tree[stackentry["edge_tree_idx"], ...]
+            d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
+
+            if child_1 == -1:
+                stackentry["region_counts_1"] = {labels[d_1, w_1, h_1]: 1}
+                stackentry["child_1_status"] = 2
+            else:
+                # recurse first child
+                # add to stack
+                stackentry["child_1_status"] = 1
+                next_stackentry = stackentry_template.copy()
+                next_stackentry["edge_tree_idx"] = child_1
+                stack.append(next_stackentry)
+                continue
+        elif stackentry["child_1_status"] == 1:
+            stackentry["region_counts_1"] = return_dict
+            stackentry["child_1_status"] = 2
+        print("after recursing 1")
+
+
+        ########################################################################
+        # Child 2
+        if stackentry["child_2_status"] == 0:
+            linear_edge_index, child_1, child_2 = edge_tree[stackentry["edge_tree_idx"], ...]
+            d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
+            offset = neighborhood[k, ...]
+            d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
+
+            if child_2 == -1:
+                region_counts_2 = {labels[d_2, w_2, h_2]: 1}
+            else:
+                # recurse first child
+                # add to stack
+                stackentry["child_2_status"] = 1
+                next_stackentry = stackentry_template.copy()
+                next_stackentry["edge_tree_idx"] = child_2
+                stack.append(next_stackentry)
+                continue
+        elif stackentry["child_2_status"] == 1:
+            region_counts_2 = return_dict
+        print("after recursing 2")
+
+
+
+        # syntactic sugar for below
+        region_counts_1 = stackentry["region_counts_1"]
+
+        # mark this edge as done so recursion doesn't hit it again
+        edge_tree[edge_tree_idx, 0] = -1
+
+        return_dict = {}
+        for key1, counts1 in region_counts_1.items():
+            for key2, counts2 in region_counts_2.items():
+                if key1 == key2:
+                    pos_pairs[d_1, w_1, h_1, k] += counts1 * counts2
+                else:
+                    neg_pairs[d_1, w_1, h_1, k] += counts1 * counts2
+
+
+        for key1, counts1 in region_counts_1.items():
+            return_dict[key1] = counts1
+
+        for key2, counts2 in region_counts_2.items():
+            if key2 in return_dict.keys():
+                return_dict[key2] += counts2
+            else:
+                return_dict[key2] = counts2
+        print("end. popping now.")
+        stack.pop()
+
+        
+
 
 def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
 
@@ -158,7 +254,7 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
     for idx in range(edge_tree.shape[0] - 1, 0, -1):
         if edge_tree[idx, 0] == -1:
             continue
-        compute_pairs_recursive(labels, edge_weights, neighborhood,
+        compute_pairs_iterative(labels, edge_weights, neighborhood,
                                edge_tree, idx, pos_pairs, neg_pairs)
 
     return pos_pairs, neg_pairs
