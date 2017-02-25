@@ -183,6 +183,15 @@ def build_tree(labels, edge_weights, neighborhood):
 
 ########################################################################################
 # compute pairs (instead of costs) methods
+cdef unordered_map[unsigned int, unsigned int] compute_pairs_iterative(  \
+                                                unsigned int[:, :, :] labels,
+                                                int[::1] ew_shape,
+                                                int[:, :] neighborhood, 
+                                                int[:, :] edge_tree, 
+                                                int edge_tree_idx, 
+                                                unsigned int[:, :, :, :] pos_pairs, 
+                                                unsigned int[:, :, :, :] neg_pairs) nogil:
+    pass
 
 cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
                                                 unsigned int[:, :, :] labels,
@@ -241,10 +250,9 @@ cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
             else:
                 neg_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
 
+    # add counts to return_dict
     for item1 in region_counts_1:
         return_dict[item1.first] = item1.second
-
-    
     for item2 in region_counts_2:
         if return_dict.count(item2.first) == 1:
             return_dict[item2.first] += item2.second
