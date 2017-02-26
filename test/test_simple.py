@@ -1,5 +1,5 @@
 import numpy as np
-from malis_large_volumes import malis_python as malis_cython
+from malis_large_volumes import malis_cython as malis_cython
 from test_tools import malis_turaga
 
 

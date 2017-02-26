@@ -130,10 +130,10 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
             else:
                 # recurse first child
                 # add to stack
-                stackentry["child_1_status"] = 1
                 next_stackentry = stackentry_template.copy()
                 next_stackentry["edge_tree_idx"] = child_1
                 stack.append(next_stackentry)
+                stackentry["child_1_status"] = 1
                 continue
         elif stackentry["child_1_status"] == 1:
             stackentry["region_counts_1"] = return_dict
@@ -153,10 +153,10 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
             else:
                 # recurse first child
                 # add to stack
-                stackentry["child_2_status"] = 1
                 next_stackentry = stackentry_template.copy()
                 next_stackentry["edge_tree_idx"] = child_2
                 stack.append(next_stackentry)
+                stackentry["child_2_status"] = 1
                 continue
         elif stackentry["child_2_status"] == 1:
             region_counts_2 = return_dict
