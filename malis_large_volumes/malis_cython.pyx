@@ -214,19 +214,20 @@ cdef void compute_pairs_iterative(  \
 
     # create a template for stackentries. We'll copy this template and fill it
     # with new values when putting stackentries on top of the stack
-    cdef stackelement stackentry_template, stackentry, next_stackentry
+    cdef stackelement stackentry_template, next_stackentry
+    cdef stackelement* stackentry
     stackentry_template = stackelement()
     stackentry_template.child_1_status = 0
     stackentry_template.child_2_status = 0
 
     # create the first entry on the stack
-    stackentry = stackentry_template
-    stackentry.edge_tree_idx = edge_tree_idx
-    mystack.push(stackentry)
+    next_stackentry = stackentry_template
+    next_stackentry.edge_tree_idx = edge_tree_idx
+    mystack.push(next_stackentry)
 
     while not mystack.empty():
 
-        stackentry = mystack.top()
+        stackentry = &mystack.top()
         linear_edge_index = edge_tree[stackentry.edge_tree_idx, 0]
         my_unravel_index(linear_edge_index, ew_shape, return_idxes)
         d_1 = return_idxes[0]
@@ -244,8 +245,6 @@ cdef void compute_pairs_iterative(  \
                 stackentry.child_1_status = 2
             else:
                 stackentry.child_1_status = 1
-                mystack.pop()
-                mystack.push(stackentry)
                 next_stackentry = stackentry_template
                 next_stackentry.edge_tree_idx = child_1
                 mystack.push(next_stackentry)
@@ -270,8 +269,6 @@ cdef void compute_pairs_iterative(  \
                 region_counts_2[labels[d_2, w_2, h_2]] = 1
             else:
                 stackentry.child_2_status = 1
-                mystack.pop()
-                mystack.push(stackentry)
                 next_stackentry = stackentry_template
                 next_stackentry.edge_tree_idx = child_2
                 mystack.push(next_stackentry)
