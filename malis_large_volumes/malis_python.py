@@ -100,6 +100,7 @@ def build_tree(labels, edge_weights, neighborhood):
 # compute pairs (instead of costs) methods
 
 def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
+    offset = neighborhood[k, ...]
 
     stack = []
     stackentry_template = {
@@ -145,7 +146,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         if stackentry["child_2_status"] == 0:
 
             if child_2 == -1:
-                offset = neighborhood[k, ...]
                 d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
                 region_counts_2 = {labels[d_2, w_2, h_2]: 1}
             else:
