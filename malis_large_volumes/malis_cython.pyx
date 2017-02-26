@@ -317,7 +317,7 @@ cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
                                                 unsigned int[:, :, :, :] pos_pairs, 
                                                 unsigned int[:, :, :, :] neg_pairs) nogil:
     cdef int linear_edge_index, child_1, child_2
-    cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
+    cdef int d_1, w_1, h_1, k, d_2, w_2, h_2, counter
     cdef int return_idxes[4]
     cdef int[:] offset
     cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2, return_dict
@@ -365,14 +365,23 @@ cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
             else:
                 neg_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
 
+    counter = 0
     # add counts to return_dict
     for item1 in region_counts_1:
         return_dict[item1.first] = item1.second
+        counter += 1
+        if counter == 5:
+            break
+
+    counter = 0
     for item2 in region_counts_2:
         if return_dict.count(item2.first) == 1:
             return_dict[item2.first] += item2.second
         else:
             return_dict[item2.first] = item2.second
+        counter += 1
+        if counter == 5:
+            break
 
 
     return return_dict

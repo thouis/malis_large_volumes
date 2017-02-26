@@ -22,21 +22,21 @@ if __name__ == '__main__':
         vol_size_vec[i] = labels.size
 
         # we want the weights to alternate between high an low throughout the volume in order to 
-        # create blobs
+        # create blobs. And we want the labels to (roughly) align with those blobs.
         weights = np.random.normal(size=labels.shape + (3,), loc=.5, scale=.1).astype(dtype=np.float32)
         for j in range(0, np.max(weights.shape), 100):
             try:
-                weights[int(j/5)] -= .1 # this is hacky
+                weights[int(j/5)] -= .3 # this is hacky
                 labels[:int(j/5)] *= 2
             except:
                 pass
             try:
-                weights[:, j] -= .1
+                weights[:, j] -= .3
                 labels[:, :j] *= 3
             except:
                 pass
             try:
-                weights[:, :, j] -= .1
+                weights[:, :, j] -= .3
                 labels[:, :, :j] *= 4
             except:
                 pass
