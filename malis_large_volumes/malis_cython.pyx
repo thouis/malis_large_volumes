@@ -191,6 +191,8 @@ cdef struct stackelement:
     int child_2_status
     unordered_map[unsigned int, unsigned int] region_counts_1
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef void compute_pairs_iterative(  \
                 unsigned int[:, :, :] labels,
                 int[::1] ew_shape,
@@ -226,8 +228,6 @@ cdef void compute_pairs_iterative(  \
 
         stackentry = mystack.top()
         linear_edge_index = edge_tree[stackentry.edge_tree_idx, 0]
-        child_1 = edge_tree[stackentry.edge_tree_idx, 1]
-        child_2 = edge_tree[stackentry.edge_tree_idx, 2]
         my_unravel_index(linear_edge_index, ew_shape, return_idxes)
         d_1 = return_idxes[0]
         w_1 = return_idxes[1]
@@ -237,6 +237,7 @@ cdef void compute_pairs_iterative(  \
         ########################################################################
         # Child 1
         if stackentry.child_1_status == 0:
+            child_1 = edge_tree[stackentry.edge_tree_idx, 1]
             if child_1 == -1:
                 # add this region count to the current stackentry
                 stackentry.region_counts_1[labels[d_1, w_1, h_1]] = 1
@@ -256,8 +257,7 @@ cdef void compute_pairs_iterative(  \
         ########################################################################
         # Child 2
         if stackentry.child_2_status == 0:
-
-
+            child_2 = edge_tree[stackentry.edge_tree_idx, 2]
             if child_2 == -1:
                 offset = neighborhood[k, :]
                 d_2 = d_1 + offset[0]
