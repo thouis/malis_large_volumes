@@ -106,8 +106,7 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
             "edge_tree_idx": 0,
             "child_1_status": 0,
             "child_2_status": 0,
-            "region_counts_1": {},
-            "region_counts_2": {}
+            "region_counts_1": {}
     }
 
     # add first stackentry to stack
@@ -123,9 +122,9 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         # Child 1
         if stackentry["child_1_status"] == 0:
             linear_edge_index, child_1, child_2 = edge_tree[stackentry["edge_tree_idx"], ...]
-            d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
 
             if child_1 == -1:
+                d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
                 stackentry["region_counts_1"] = {labels[d_1, w_1, h_1]: 1}
                 stackentry["child_1_status"] = 2
             else:
@@ -145,11 +144,11 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         # Child 2
         if stackentry["child_2_status"] == 0:
             linear_edge_index, child_1, child_2 = edge_tree[stackentry["edge_tree_idx"], ...]
-            d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
-            offset = neighborhood[k, ...]
-            d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
 
             if child_2 == -1:
+                d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
+                offset = neighborhood[k, ...]
+                d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
                 region_counts_2 = {labels[d_2, w_2, h_2]: 1}
             else:
                 # recurse first child
