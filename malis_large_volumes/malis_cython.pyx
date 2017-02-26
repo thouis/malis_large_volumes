@@ -394,6 +394,5 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
         with nogil:
             compute_pairs_iterative(labels_view, ew_shape, neighborhood_view,
                                     edge_tree_view, idx, pos_pairs, neg_pairs)
-            break
 
     return np.array(pos_pairs), np.array(neg_pairs)

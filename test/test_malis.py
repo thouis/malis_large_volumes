@@ -26,15 +26,18 @@ if __name__ == '__main__':
         weights = np.random.normal(size=labels.shape + (3,), loc=.5, scale=.1).astype(dtype=np.float32)
         for j in range(0, np.max(weights.shape), 100):
             try:
-                weights[int(j/20)] -= .1 # this is hacky
+                weights[int(j/5)] -= .1 # this is hacky
+                labels[:int(j/5)] *= 2
             except:
                 pass
             try:
                 weights[:, j] -= .1
+                labels[:, :j] *= 3
             except:
                 pass
             try:
                 weights[:, :, j] -= .1
+                labels[:, :, :j] *= 4
             except:
                 pass
             

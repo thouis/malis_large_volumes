@@ -52,7 +52,7 @@ print("Test 2 finished, no error")
 
 #######################################################
 # TEST 3
-print("Starting test 2")
+print("Starting test 3")
 # in this test we're just comparing the current implementation and Turagas
 labels = np.random.randint(1, 10, size=(10, 20, 20), dtype=np.uint32)
 weights = np.random.normal(loc=0.5, scale=0.1, size=labels.shape + (3,)).astype(np.float)
