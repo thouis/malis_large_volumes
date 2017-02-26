@@ -184,6 +184,7 @@ def build_tree(labels, edge_weights, neighborhood):
 
 ########################################################################################
 # compute pairs (instead of costs) methods
+
 cdef struct stackelement:
     int edge_tree_idx
     int child_1_status
@@ -218,31 +219,35 @@ cdef void compute_pairs_iterative(  \
 
     # create the first entry on the stack
     stackentry = stackentry_template
+    stackentry.edge_tree_idx = edge_tree_idx
     mystack.push(stackentry)
 
     while not mystack.empty():
+
         stackentry = mystack.top()
+        linear_edge_index = edge_tree[stackentry.edge_tree_idx, 0]
+        child_1 = edge_tree[stackentry.edge_tree_idx, 1]
+        child_2 = edge_tree[stackentry.edge_tree_idx, 2]
+        my_unravel_index(linear_edge_index, ew_shape, return_idxes)
+        d_1 = return_idxes[0]
+        w_1 = return_idxes[1]
+        h_1 = return_idxes[2]
+        k = return_idxes[3]
 
         ########################################################################
         # Child 1
         if stackentry.child_1_status == 0:
-            linear_edge_index = edge_tree[stackentry.edge_tree_idx, 0]
-            child_1 = edge_tree[stackentry.edge_tree_idx, 1]
-
             if child_1 == -1:
-                my_unravel_index(linear_edge_index, ew_shape, return_idxes)
-                d_1 = return_idxes[0]
-                w_1 = return_idxes[1]
-                h_1 = return_idxes[2]
-                k = return_idxes[3]
                 # add this region count to the current stackentry
                 stackentry.region_counts_1[labels[d_1, w_1, h_1]] = 1
                 stackentry.child_1_status = 2
             else:
+                stackentry.child_1_status = 1
+                mystack.pop()
+                mystack.push(stackentry)
                 next_stackentry = stackentry_template
-                next_stackentry.edge_tree_idx = child_2
+                next_stackentry.edge_tree_idx = child_1
                 mystack.push(next_stackentry)
-                stackentry.child_2_status = 1
                 continue
         elif stackentry.child_1_status == 1:
             stackentry.region_counts_1 = return_dict
@@ -251,50 +256,37 @@ cdef void compute_pairs_iterative(  \
         ########################################################################
         # Child 2
         if stackentry.child_2_status == 0:
-            # create new region_counts_2
-            regin_counts_2 = dict_template
-            linear_edge_index = edge_tree[stackentry.edge_tree_idx, 0]
-            child_2 = edge_tree[stackentry.edge_tree_idx, 2]
+
 
             if child_2 == -1:
-                # this next block just determines the coordinates.
-                # the code is a bit ugly and possibly also not as fast as could be 
-                my_unravel_index(linear_edge_index, ew_shape, return_idxes)
-                d_1 = return_idxes[0]
-                w_1 = return_idxes[1]
-                h_1 = return_idxes[2]
-                k = return_idxes[3]
+                offset = neighborhood[k, :]
                 d_2 = d_1 + offset[0]
                 w_2 = w_1 + offset[1]
                 h_2 = h_1 + offset[2]
 
+                # create new region_counts_2
+                region_counts_2 = dict_template
                 # add this region count to the current stackentry
                 region_counts_2[labels[d_2, w_2, h_2]] = 1
-                stackentry.child_2_status = 2
             else:
+                stackentry.child_2_status = 1
+                mystack.pop()
+                mystack.push(stackentry)
                 next_stackentry = stackentry_template
                 next_stackentry.edge_tree_idx = child_2
                 mystack.push(next_stackentry)
-                stackentry.child_2_status = 1
                 continue
         elif stackentry.child_2_status == 1:
             region_counts_2 = return_dict
-            stackentry.child_2_status = 2
             
 
-        linear_edge_index = edge_tree[stackentry.edge_tree_idx, 0]
-        my_unravel_index(linear_edge_index, ew_shape, return_idxes)
-        d_1 = return_idxes[0]
-        w_1 = return_idxes[1]
-        h_1 = return_idxes[2]
-        k = return_idxes[3]
 
         # syntactic sugar for below (if this does a real copy, we may have to take it out
         # for performance reasons)
         region_counts_1 = stackentry.region_counts_1
 
         # mark this edge as done so recursion doesn't hit it again
-        edge_tree[edge_tree_idx, 0] = -1
+        edge_tree[stackentry.edge_tree_idx, 0] = -1
 
         for item1 in region_counts_1:
             for item2 in region_counts_2:
@@ -315,9 +307,6 @@ cdef void compute_pairs_iterative(  \
                 return_dict[item2.first] += item2.second
             else:
                 return_dict[item2.first] = item2.second
-
-
-
 
         mystack.pop()
 
@@ -408,5 +397,6 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
         with nogil:
             compute_pairs_iterative(labels_view, ew_shape, neighborhood_view,
                                     edge_tree_view, idx, pos_pairs, neg_pairs)
+            break
 
     return np.array(pos_pairs), np.array(neg_pairs)

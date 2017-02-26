@@ -28,9 +28,6 @@ assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga imple
 
 print("Test 1 finished, no error")
 
-
-
-
 #######################################################
 # TEST 2
 print("Starting test 2")

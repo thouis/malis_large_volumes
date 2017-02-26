@@ -10,10 +10,10 @@ from malis_large_volumes import malis_cython, malis_python
 
 
 if __name__ == '__main__':
-    depth_size_range = [4]
+    depth_size_range = [5]
 #    max_stack_vec = np.zeros(len(depth_size_range))
     vol_size_vec = np.zeros(len(depth_size_range))
-    height_and_width = 3
+    height_and_width = 1000
 
     for i, depth_size in enumerate(depth_size_range):
         labels = np.ones((depth_size, height_and_width, height_and_width), dtype=np.uint32)
@@ -58,10 +58,10 @@ if __name__ == '__main__':
 
         ######################################################################
         # Compare with S. Turagas malis implementation
+        start_time = time.time()
         pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
-        print(pos_pairs[1, 1, 1, 0])
-        print(pos_pairs_2[1, 1, 1, 0])
-        import pdb; pdb.set_trace()
+        end_time = time.time()
+        print("Turaga computation time: " + str(end_time - start_time))
 
 #    plt.figure()
 #    plt.plot(vol_size_vec, max_stack_vec)
