@@ -9,7 +9,7 @@ from .malis_python import chase as chase_python
 import sys
 from libcpp.unordered_map cimport unordered_map
 from libcpp.stack cimport stack
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport malloc, free, realloc
 from cython.operator cimport dereference
 sys.setrecursionlimit(8000)
 
@@ -212,8 +212,8 @@ cdef void compute_pairs_iterative(  \
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
     cdef int return_idxes[4]
     cdef int[:] offset
-    cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2 
-    cdef unordered_map[unsigned int, unsigned int] *return_dict
+#    cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2 
+    cdef unordered_map[unsigned int, unsigned int] *return_dict, *region_counts_2
 
     cdef stack[stackelement*] mystack
     cdef stackelement *stackentry, *next_stackentry
@@ -259,6 +259,7 @@ cdef void compute_pairs_iterative(  \
         elif stackentry.child_1_status == 1:
             stackentry.region_counts_1 = return_dict
             stackentry.child_1_status = 2
+
         ########################################################################
         # Child 2
         if stackentry.child_2_status == 0:
@@ -270,9 +271,9 @@ cdef void compute_pairs_iterative(  \
                 h_2 = h_1 + offset[2]
 
                 # create new region_counts_2
-                region_counts_2 = dereference(new unordered_map[uint, uint]())
+                region_counts_2 = new unordered_map[uint, uint]()
                 # add this region count to the current stackentry
-                region_counts_2[labels[d_2, w_2, h_2]] = 1
+                dereference(region_counts_2)[labels[d_2, w_2, h_2]] = 1
             else:
                 stackentry.child_2_status = 1
                 next_stackentry = <stackelement*> malloc(sizeof(stackelement))
@@ -282,18 +283,14 @@ cdef void compute_pairs_iterative(  \
                 mystack.push(next_stackentry)
                 continue
         elif stackentry.child_2_status == 1:
-            region_counts_2 = dereference(return_dict)
+            region_counts_2 = return_dict
 
-
-        # syntactic sugar for below (if this does a real copy, we may have to take it out
-        # for performance reasons)
-        region_counts_1 = dereference(stackentry.region_counts_1)
 
         # mark this edge as done so recursion doesn't hit it again
         edge_tree[stackentry.edge_tree_idx, 0] = -1
 
-        for item1 in region_counts_1:
-            for item2 in region_counts_2:
+        for item1 in dereference(stackentry.region_counts_1):
+            for item2 in dereference(region_counts_2):
 
                 if item1.first == item2.first:
                     pos_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
@@ -304,23 +301,19 @@ cdef void compute_pairs_iterative(  \
         return_dict = new unordered_map[uint, uint]()
 
         # add counts to return_dict
-        for item1 in region_counts_1:
+        for item1 in dereference(stackentry.region_counts_1):
             dereference(return_dict)[item1.first] = item1.second
-        for item2 in region_counts_2:
+        for item2 in dereference(region_counts_2):
             if dereference(return_dict).count(item2.first) == 1:
                 dereference(return_dict)[item2.first] = dereference(return_dict)[item2.first] + item2.second
             else:
                 dereference(return_dict)[item2.first] = item2.second
 
-        free(stackentry.region_counts_1)
         free(stackentry)
+        del stackentry.region_counts_1
+        del region_counts_2
         mystack.pop()
-#        with gil:
-#            print("popped from stack")
-#            print("length of stack: " + str(mystack.size()))
-#            print("looking at next stack element")
-#            stackentry = mystack.top()
-#            print("edge_tree_idx: " + str(stackentry.edge_tree_idx))
+    del return_dict
 
 
 cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
