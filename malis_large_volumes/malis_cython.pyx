@@ -182,16 +182,57 @@ def build_tree(labels, edge_weights, neighborhood):
 
 
 
+
+
 ########################################################################################
 # compute pairs (instead of costs) methods
+
+
+from libc.stdlib cimport malloc, free
+from cython.operator cimport dereference
+cdef struct test_stackelement:
+    int foo
+    int bar
+    unordered_map[unsigned int, unsigned int] *objects
+
+cdef compute():
+    cdef test_stackelement *elem
+    cdef unordered_map[unsigned int, unsigned int] *dictt 
+    cdef stack[test_stackelement*] mystack
+    elem = <test_stackelement*> malloc(sizeof(test_stackelement))
+    elem.foo = 3
+    elem.bar = 6
+    elem.objects = new unordered_map[uint, uint]()
+    dereference(elem.objects)[3] = 5
+    free(elem.objects)
+    mystack.push(elem)
+#    mystack.push(&new test_stackelement(0, 0))
+    elem = mystack.top()
+    elem.foo = 3
+    dictt = new unordered_map[uint, uint]()
+    print(elem.foo)
+    
+#    dictt = elem.objects
+#    print(dereference(dictt))
+#    dereference(dictt)[2] = 3
+    elem.objects = new unordered_map[uint, uint]()
+    dereference(elem.objects)[4] = 5
+    dereference(elem.objects)[5] = 6
+    print(dereference(elem.objects))
+    free(mystack.top())
+    print(elem.foo)
+
+
+
+
 
 cdef struct stackelement:
     int edge_tree_idx
     int child_1_status
     int child_2_status
-    unordered_map[unsigned int, unsigned int] region_counts_1
+    unordered_map[unsigned int, unsigned int]* region_counts_1
 
-@cython.boundscheck(False)
+#@cython.boundscheck(False)
 @cython.wraparound(False)
 cdef void compute_pairs_iterative(  \
                 unsigned int[:, :, :] labels,
@@ -208,79 +249,133 @@ cdef void compute_pairs_iterative(  \
     cdef int[:] offset
     cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2, return_dict, dict_template
 
-    cdef stack[stackelement] mystack
-
-    offset = neighborhood[k, :]
+    cdef stack[stackelement*] mystack
 
     # create a template for stackentries. We'll copy this template and fill it
     # with new values when putting stackentries on top of the stack
-    cdef stackelement stackentry_template, next_stackentry
-    cdef stackelement* stackentry
-    stackentry_template = stackelement()
-    stackentry_template.child_1_status = 0
-    stackentry_template.child_2_status = 0
+#    cdef stackelement stackentry_template, next_stackentry
+    cdef stackelement *stackentry, *next_stackentry
+#    stackentry_template = stackelement()
+#    stackentry_template.edge_tree_idx = 1
+#    stackentry_template.child_1_status = 0
+#    stackentry_template.child_2_status = 0
+#    stackentry_template.region_counts_1 = dict_template
 
     # create the first entry on the stack
-    next_stackentry = stackentry_template
+    next_stackentry = <stackelement*> malloc(sizeof(stackelement))
     next_stackentry.edge_tree_idx = edge_tree_idx
+    next_stackentry.child_1_status = 0
+    next_stackentry.child_2_status = 0
+
+    with gil:
+        print(edge_tree_idx)
+        print(next_stackentry.edge_tree_idx)
+
     mystack.push(next_stackentry)
 
     while not mystack.empty():
+        with gil:
+            print("loop start")
 
-        stackentry = &mystack.top()
+        stackentry = mystack.top()
         linear_edge_index = edge_tree[stackentry.edge_tree_idx, 0]
+        with gil:
+            print("stackentry.edge_tree_idx: " + str(stackentry.edge_tree_idx))
+            print("linear_edge_index: " + str(linear_edge_index))
         my_unravel_index(linear_edge_index, ew_shape, return_idxes)
         d_1 = return_idxes[0]
         w_1 = return_idxes[1]
         h_1 = return_idxes[2]
         k = return_idxes[3]
+        with gil:
+            print("k is: " + str(k))
 
         ########################################################################
         # Child 1
         if stackentry.child_1_status == 0:
             child_1 = edge_tree[stackentry.edge_tree_idx, 1]
+            with gil:
+                print("Child_1 is: " + str(child_1))
+                print("stackentry.edge_tree_idx: " + str(stackentry.edge_tree_idx))
             if child_1 == -1:
                 # add this region count to the current stackentry
-                stackentry.region_counts_1[labels[d_1, w_1, h_1]] = 1
+                stackentry.region_counts_1 = new unordered_map[uint, uint]()
+                dereference(stackentry.region_counts_1)[labels[d_1, w_1, h_1]] = 1
                 stackentry.child_1_status = 2
             else:
                 stackentry.child_1_status = 1
-                next_stackentry = stackentry_template
+                with gil:
+                    print("Assigning " + str(child_1) + " to next edge_tree_idx")
+                    print("stackentry.edge_tree_idx " + str(stackentry.edge_tree_idx))
+                # create the next entry on the stack
+                next_stackentry = <stackelement*> malloc(sizeof(stackelement))
                 next_stackentry.edge_tree_idx = child_1
+                next_stackentry.child_1_status = 0
+                next_stackentry.child_2_status = 0
+                with gil:
+                    print("stackentry.edge_tree_idx " + str(stackentry.edge_tree_idx))
+                    print("next_stackentry.edge_tree_idx" + str(next_stackentry.edge_tree_idx))
                 mystack.push(next_stackentry)
+                with gil:
+                    print("after pushing to stack, popping again and looking at top")
+                    mystack.pop()
+                    stackentry = mystack.top()
+                    print("stackentry.edge_tree_idx " + str(stackentry.edge_tree_idx))
+                    mystack.push(next_stackentry)
+
                 continue
         elif stackentry.child_1_status == 1:
-            stackentry.region_counts_1 = return_dict
+            stackentry.region_counts_1 = &return_dict
             stackentry.child_1_status = 2
-
+        with gil:
+            print("Finished first child")
         ########################################################################
         # Child 2
         if stackentry.child_2_status == 0:
+            with gil:
+                print("In 2nd child")
             child_2 = edge_tree[stackentry.edge_tree_idx, 2]
+            with gil:
+                print("Child_2 is: " + str(child_2))
             if child_2 == -1:
+                with gil:
+                    print("in child_2 == -1 section")
+                    print("Child_2 is " + str(child_2))
+                    print("computing indices now")
+                    print("k is: " + str(k))
                 offset = neighborhood[k, :]
                 d_2 = d_1 + offset[0]
                 w_2 = w_1 + offset[1]
                 h_2 = h_1 + offset[2]
+                with gil:
+                    print("Computed indices")
 
                 # create new region_counts_2
-                region_counts_2 = dict_template
+                region_counts_2 = dereference(new unordered_map[uint, uint]())
                 # add this region count to the current stackentry
                 region_counts_2[labels[d_2, w_2, h_2]] = 1
+                with gil:
+                    print("Assigned to region_counts_2")
             else:
+                with gil:
+                    print("Assigning " + str(child_2) + " to next edge_tree_idx")
                 stackentry.child_2_status = 1
-                next_stackentry = stackentry_template
+                next_stackentry = <stackelement*> malloc(sizeof(stackelement))
                 next_stackentry.edge_tree_idx = child_2
+                next_stackentry.child_1_status = 0
+                next_stackentry.child_2_status = 0
                 mystack.push(next_stackentry)
                 continue
         elif stackentry.child_2_status == 1:
             region_counts_2 = return_dict
+        with gil:
+            print("Finished second child")
             
 
 
         # syntactic sugar for below (if this does a real copy, we may have to take it out
         # for performance reasons)
-        region_counts_1 = stackentry.region_counts_1
+        region_counts_1 = dereference(stackentry.region_counts_1)
 
         # mark this edge as done so recursion doesn't hit it again
         edge_tree[stackentry.edge_tree_idx, 0] = -1
@@ -305,7 +400,19 @@ cdef void compute_pairs_iterative(  \
             else:
                 return_dict[item2.first] = item2.second
 
+        with gil:
+            print("going to pop. length of stack: " + str(mystack.size()))
+            print("edge_tree_idx: " + str(stackentry.edge_tree_idx))
+
+#        free(stackentry.region_counts_1)
+#        free(stackentry)
         mystack.pop()
+#        with gil:
+#            print("popped from stack")
+#            print("length of stack: " + str(mystack.size()))
+#            print("looking at next stack element")
+#            stackentry = mystack.top()
+#            print("edge_tree_idx: " + str(stackentry.edge_tree_idx))
 
 
 cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
