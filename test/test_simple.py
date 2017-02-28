@@ -25,7 +25,6 @@ assert neg_pairs[0, 0, 3, 2] == 9, "neg pairs result was incorrect"
 pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
 assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
 assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
-import pdb; pdb.set_trace()
 
 print("Test 1 finished, no error")
 

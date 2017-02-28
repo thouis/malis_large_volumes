@@ -247,7 +247,8 @@ cdef void compute_pairs_iterative(  \
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
     cdef int return_idxes[4]
     cdef int[:] offset
-    cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2, return_dict, dict_template
+    cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2 
+    cdef unordered_map[unsigned int, unsigned int] *return_dict
 
     cdef stack[stackelement*] mystack
 
@@ -325,7 +326,7 @@ cdef void compute_pairs_iterative(  \
 
                 continue
         elif stackentry.child_1_status == 1:
-            stackentry.region_counts_1 = &return_dict
+            stackentry.region_counts_1 = return_dict
             stackentry.child_1_status = 2
         with gil:
             print("Finished first child")
@@ -367,7 +368,7 @@ cdef void compute_pairs_iterative(  \
                 mystack.push(next_stackentry)
                 continue
         elif stackentry.child_2_status == 1:
-            region_counts_2 = return_dict
+            region_counts_2 = dereference(return_dict)
         with gil:
             print("Finished second child")
             
@@ -376,12 +377,20 @@ cdef void compute_pairs_iterative(  \
         # syntactic sugar for below (if this does a real copy, we may have to take it out
         # for performance reasons)
         region_counts_1 = dereference(stackentry.region_counts_1)
+        with gil:
+            print("region_counts_1:")
+            print(region_counts_1)
+            print("region_counts_2:")
+            print(region_counts_2)
 
         # mark this edge as done so recursion doesn't hit it again
         edge_tree[stackentry.edge_tree_idx, 0] = -1
 
         for item1 in region_counts_1:
             for item2 in region_counts_2:
+                with gil:
+                    print(item1.first)
+                    print(item2.first)
 
                 if item1.first == item2.first:
                     pos_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
@@ -389,16 +398,24 @@ cdef void compute_pairs_iterative(  \
                     neg_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
 
         # create new return dict
-        return_dict = dict_template
+        return_dict = new unordered_map[uint, uint]()
 
         # add counts to return_dict
         for item1 in region_counts_1:
-            return_dict[item1.first] = item1.second
+            dereference(return_dict)[item1.first] = item1.second
         for item2 in region_counts_2:
-            if return_dict.count(item2.first) == 1:
-                return_dict[item2.first] += item2.second
+            if dereference(return_dict).count(item2.first) == 1:
+                with gil:
+                    print("key was av")
+                    print(dereference(return_dict))
+                dereference(return_dict)[item2.first] = dereference(return_dict)[item2.first] + item2.second
+                with gil:
+                    print(dereference(return_dict))
+
             else:
-                return_dict[item2.first] = item2.second
+                dereference(return_dict)[item2.first] = item2.second
+        with gil:
+            print(dereference(return_dict))
 
         with gil:
             print("going to pop. length of stack: " + str(mystack.size()))
