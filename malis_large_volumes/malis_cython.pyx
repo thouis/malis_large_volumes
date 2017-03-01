@@ -205,26 +205,25 @@ cdef void compute_pairs_iterative(  \
                 int[:, :] edge_tree, 
                 int edge_tree_idx, 
                 unsigned long[:, :, :, :] pos_pairs, 
-                unsigned long[:, :, :, :] neg_pairs) nogil:
+                unsigned long[:, :, :, :] neg_pairs,
+                int keep_objs_per_edge) nogil:
 
     cdef int linear_edge_index, child_1, child_2
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
-    cdef int counter
-    cdef int KEEP_N_OBJS = 5
     cdef int return_idxes[4]
     cdef int[:] offset
     cdef unordered_map[unsigned int, unsigned long] *return_dict
     cdef unordered_map[unsigned int, unsigned long] *region_counts_2
     cdef stack[stackelement*] mystack
     cdef stackelement *stackentry, *next_stackentry
+    cdef int smallest_key # used to determine smalles object counts
+    cdef unsigned long smallest_count 
 
     # create the first entry on the stack
     next_stackentry = <stackelement*> malloc(sizeof(stackelement))
     next_stackentry.edge_tree_idx = edge_tree_idx
     next_stackentry.child_1_status = 0
     next_stackentry.child_2_status = 0
-
-
     mystack.push(next_stackentry)
 
     while not mystack.empty():
@@ -297,20 +296,16 @@ cdef void compute_pairs_iterative(  \
                 else:
                     neg_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
 
+
+
+
         # create new return dict
         return_dict = new unordered_map[unsigned int, unsigned long]()
 
-        counter = 0
         # add counts to return_dict
         for item1 in dereference(stackentry.region_counts_1):
             dereference(return_dict)[item1.first] = item1.second
 
-            counter += 1
-            if counter == 10:
-                break
-
-
-        counter = 0
         for item2 in dereference(region_counts_2):
             if dereference(return_dict).count(item2.first) == 1:
                 dereference(return_dict)[item2.first] = dereference(return_dict)[item2.first] + item2.second
@@ -318,11 +313,23 @@ cdef void compute_pairs_iterative(  \
                 # this object was not present in those objects added from
                 # region_counts_1
                 dereference(return_dict)[item2.first] = item2.second
-                # the counter should only be increased if we added a new key
-                counter += 1
 
-            if counter == 10:
-                break
+
+        while return_dict.size() > 10:
+
+            # find smallest object count
+            smallest_key = dereference(return_dict.begin()).first
+            smallest_count = dereference(return_dict.begin()).second
+            for item in dereference(return_dict):
+                if item.second < smallest_count:
+                    smallest_key = item.first
+            
+            # delete key with smallest count
+            return_dict.erase(smallest_key)
+
+
+
+
 
         # free region counts and the stackentry. Remember we are using return_dict in the next
         # iteration of the loop so we need it
@@ -421,13 +428,14 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
     return return_dict
 
 
-def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
+def compute_pairs(labels, edge_weights, neighborhood, edge_tree, keep_objs_per_edge=10):
     cdef unsigned int [:, :, :] labels_view = labels
     cdef int [:, :] neighborhood_view = neighborhood
     cdef int [:, :] edge_tree_view = edge_tree
     cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
     cdef unsigned long [:, :, :, :] pos_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint64)
     cdef unsigned long [:, :, :, :] neg_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint64)
+    cdef int keep_objs = keep_objs_per_edge
 
     # process tree from root (later in array) to leaves (earlier)
     cdef int idx
@@ -436,6 +444,6 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
             continue
         with nogil:
             compute_pairs_iterative(labels_view, ew_shape, neighborhood_view,
-                                    edge_tree_view, idx, pos_pairs, neg_pairs)
+                                    edge_tree_view, idx, pos_pairs, neg_pairs, int(keep_objs))
 
     return np.array(pos_pairs), np.array(neg_pairs)
