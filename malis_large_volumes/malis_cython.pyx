@@ -306,7 +306,7 @@ cdef void compute_pairs_iterative(  \
             dereference(return_dict)[item1.first] = item1.second
 
             counter += 1
-            if counter == 5:
+            if counter == 10:
                 break
 
 
@@ -315,10 +315,13 @@ cdef void compute_pairs_iterative(  \
             if dereference(return_dict).count(item2.first) == 1:
                 dereference(return_dict)[item2.first] = dereference(return_dict)[item2.first] + item2.second
             else:
+                # this object was not present in those objects added from
+                # region_counts_1
                 dereference(return_dict)[item2.first] = item2.second
+                # the counter should only be increased if we added a new key
+                counter += 1
 
-            counter += 1
-            if counter == 5:
+            if counter == 10:
                 break
 
         # free region counts and the stackentry. Remember we are using return_dict in the next
@@ -401,7 +404,7 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
     for item1 in region_counts_1:
         return_dict[item1.first] = item1.second
         counter += 1
-        if counter == 5:
+        if counter == 10:
             break
 
     counter = 0
@@ -411,7 +414,7 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
         else:
             return_dict[item2.first] = item2.second
         counter += 1
-        if counter == 5:
+        if counter == 10:
             break
 
 

@@ -11,7 +11,7 @@ import malis.malis_pair_wrapper as malis_pairs_wrapper_turaga
 
 
 if __name__ == '__main__':
-    depth_size_range = [30]
+    depth_size_range = [60]
     vol_size_vec = np.zeros(len(depth_size_range))
     height_and_width = 1000
 
