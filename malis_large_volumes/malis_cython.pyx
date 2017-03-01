@@ -209,9 +209,12 @@ cdef void compute_pairs_iterative(  \
 
     cdef int linear_edge_index, child_1, child_2
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
+    cdef int counter
+    cdef int KEEP_N_OBJS = 5
     cdef int return_idxes[4]
     cdef int[:] offset
-    cdef unordered_map[unsigned int, unsigned long] *return_dict, *region_counts_2
+    cdef unordered_map[unsigned int, unsigned long] *return_dict
+    cdef unordered_map[unsigned int, unsigned long] *region_counts_2
     cdef stack[stackelement*] mystack
     cdef stackelement *stackentry, *next_stackentry
 
@@ -297,14 +300,26 @@ cdef void compute_pairs_iterative(  \
         # create new return dict
         return_dict = new unordered_map[unsigned int, unsigned long]()
 
+        counter = 0
         # add counts to return_dict
         for item1 in dereference(stackentry.region_counts_1):
             dereference(return_dict)[item1.first] = item1.second
+
+            counter += 1
+            if counter == 5:
+                break
+
+
+        counter = 0
         for item2 in dereference(region_counts_2):
             if dereference(return_dict).count(item2.first) == 1:
                 dereference(return_dict)[item2.first] = dereference(return_dict)[item2.first] + item2.second
             else:
                 dereference(return_dict)[item2.first] = item2.second
+
+            counter += 1
+            if counter == 5:
+                break
 
         # free region counts and the stackentry. Remember we are using return_dict in the next
         # iteration of the loop so we need it
