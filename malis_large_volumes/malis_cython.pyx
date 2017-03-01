@@ -65,11 +65,11 @@ cdef void my_unravel_index(int flat_idx, int [::1] shape, int[4] return_idxes) n
 def build_tree(labels, edge_weights, neighborhood):
     '''find tree of edges linking regions.
         labels = (D, W, H) integer label volume.  0s ignored
-        edge_weights = (D, W, H, K) floating point values.
+        edge_weights = (K, D, W, H) floating point values.
                   Kth entry corresponds to Kth offset in neighborhood.
         neighborhood = (K, 3) offsets from pixel to linked pixel.
 
-        returns: edge tree (D * W * H, 3) (int32)
+        returns: edge tree (3, D * W * H) (int32)
             array of: (linear edge index, child 1 index in edge tree, child 2 index in edge tree)
             If a child index is -1, it's a pixel, not an edge, and can be
                 inferred from the linear edge index.
@@ -126,10 +126,10 @@ def build_tree(labels, edge_weights, neighborhood):
 
             # get first voxel connected by the current edge
             my_unravel_index(edge_idx, ew_shape, return_idxes)
-            d_1 = return_idxes[0]
-            w_1 = return_idxes[1]
-            h_1 = return_idxes[2]
-            k = return_idxes[3]
+            k = return_idxes[0]
+            d_1 = return_idxes[1]
+            w_1 = return_idxes[2]
+            h_1 = return_idxes[3]
 
             # get idxes of second voxel connected by this edge
             offset = neighborhood_view[k,:]
@@ -229,10 +229,10 @@ cdef void compute_pairs_iterative(  \
         stackentry = mystack.top()
         linear_edge_index = edge_tree[stackentry.edge_tree_idx, 0]
         my_unravel_index(linear_edge_index, ew_shape, return_idxes)
-        d_1 = return_idxes[0]
-        w_1 = return_idxes[1]
-        h_1 = return_idxes[2]
-        k = return_idxes[3]
+        k = return_idxes[0]
+        d_1 = return_idxes[1]
+        w_1 = return_idxes[2]
+        h_1 = return_idxes[3]
 
         ########################################################################
         # Child 1
@@ -290,9 +290,9 @@ cdef void compute_pairs_iterative(  \
             for item2 in dereference(region_counts_2):
 
                 if item1.first == item2.first:
-                    pos_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
+                    pos_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
                 else:
-                    neg_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
+                    neg_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
 
         # create new return dict
         return_dict = new unordered_map[unsigned int, unsigned long]()
@@ -306,6 +306,8 @@ cdef void compute_pairs_iterative(  \
             else:
                 dereference(return_dict)[item2.first] = item2.second
 
+        # free region counts and the stackentry. Remember we are using return_dict in the next
+        # iteration of the loop so we need it
         free(stackentry)
         del stackentry.region_counts_1
         del region_counts_2
@@ -324,7 +326,11 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
                                                 int edge_tree_idx, 
                                                 unsigned long[:, :, :, :] pos_pairs, 
                                                 unsigned long[:, :, :, :] neg_pairs) nogil:
-    """ This function has been deprecated in favor of compute_pairs_recursive """
+    """ 
+    !!!
+    !!! This function has been deprecated in favor of compute_pairs_recursive 
+    !!!
+    """
 
     cdef int linear_edge_index, child_1, child_2
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2, counter
@@ -338,10 +344,10 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
     child_1 = edge_tree[edge_tree_idx, 1]
     child_2 = edge_tree[edge_tree_idx, 2]
     my_unravel_index(linear_edge_index, ew_shape, return_idxes)
-    d_1 = return_idxes[0]
-    w_1 = return_idxes[1]
-    h_1 = return_idxes[2]
-    k = return_idxes[3]
+    k = return_idxes[0]
+    d_1 = return_idxes[1]
+    w_1 = return_idxes[2]
+    h_1 = return_idxes[3]
 
     if child_1 == -1:
         # first child is a voxel.  Compute its location
@@ -371,9 +377,9 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
         for item2 in region_counts_2:
 
             if item1.first == item2.first:
-                pos_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
+                pos_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
             else:
-                neg_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
+                neg_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
 
     counter = 0
     # add counts to return_dict
@@ -402,8 +408,8 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
     cdef int [:, :] neighborhood_view = neighborhood
     cdef int [:, :] edge_tree_view = edge_tree
     cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
-    cdef unsigned long [:, :, :, :] pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint64)
-    cdef unsigned long [:, :, :, :] neg_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint64)
+    cdef unsigned long [:, :, :, :] pos_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint64)
+    cdef unsigned long [:, :, :, :] neg_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint64)
 
     # process tree from root (later in array) to leaves (earlier)
     cdef int idx

@@ -3,14 +3,15 @@ import matplotlib.pyplot as plt
 import pdb
 import time
 import malis_large_volumes
-from test_tools import check_tree, malis_turaga
+from test_tools import check_tree
 from malis_large_volumes import malis_cython, malis_python
+import malis.malis_pair_wrapper as malis_pairs_wrapper_turaga
 
 
 
 
 if __name__ == '__main__':
-    depth_size_range = [40]
+    depth_size_range = [5]
     vol_size_vec = np.zeros(len(depth_size_range))
     height_and_width = 1000
 
@@ -22,21 +23,21 @@ if __name__ == '__main__':
 
         # we want the weights to alternate between high an low throughout the volume in order to 
         # create blobs. And we want the labels to (roughly) align with those blobs.
-        weights = np.random.normal(size=labels.shape + (3,), loc=.5, scale=.1).astype(dtype=np.float32)
+        weights = np.random.normal(size= (3,) + labels.shape, loc=.5, scale=.1).astype(dtype=np.float32)
         for j in range(0, np.max(weights.shape), 100):
             try:
-                weights[int(j/5)] -= .3 # this is hacky
-                labels[:int(j/5)] *= 2
+                weights[:, int(j/5)] -= .3 # this is hacky
+                labels[:, :int(j/5)] *= 2
             except:
                 pass
             try:
-                weights[:, j] -= .3
-                labels[:, :j] *= 3
+                weights[:, :,  j] -= .3
+                labels[:, :, :j] *= 3
             except:
                 pass
             try:
-                weights[:, :, j] -= .3
-                labels[:, :, :j] *= 4
+                weights[:, :, :, j] -= .3
+                labels[:, :, :, :j] *= 4
             except:
                 pass
             
@@ -62,6 +63,8 @@ if __name__ == '__main__':
         ######################################################################
         # Compare with S. Turagas malis implementation
         start_time = time.time()
-        pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
+        pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights, 
+                                                                 labels.astype(np.int64),
+                                                                 ignore_background=False)
         end_time = time.time()
         print("Turaga computation time: " + str(end_time - start_time))
