@@ -56,7 +56,10 @@ if __name__ == '__main__':
 
         # Computing pairs
         start_time = time.time()
-        pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
+        pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights,
+                                                          neighborhood,
+                                                          edge_tree_cython.copy(),
+                                                          keep_objs_per_edge=20)
         end_time = time.time()
         print("Pair computation time: " + str(end_time - start_time))
 

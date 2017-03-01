@@ -1,6 +1,5 @@
 import numpy as np
 cimport numpy as np
-import pdb
 cimport cython
 from cython.view cimport array as cvarray
 #from .argsort_int32 import qargsort32
@@ -216,7 +215,7 @@ cdef void compute_pairs_iterative(  \
     cdef unordered_map[unsigned int, unsigned long] *region_counts_2
     cdef stack[stackelement*] mystack
     cdef stackelement *stackentry, *next_stackentry
-    cdef int smallest_key # used to determine smalles object counts
+    cdef int key_smallest_count # used to determine smalles object counts
     cdef unsigned long smallest_count 
 
     # create the first entry on the stack
@@ -285,6 +284,8 @@ cdef void compute_pairs_iterative(  \
             region_counts_2 = return_dict
 
 
+        #########################################################################
+        # compute pair-counts and save them in pos_pairs and neg_pairs
         # mark this edge as done so recursion doesn't hit it again
         edge_tree[stackentry.edge_tree_idx, 0] = -1
 
@@ -298,7 +299,8 @@ cdef void compute_pairs_iterative(  \
 
 
 
-
+        #########################################################################
+        # Prepare return dict that will be used in the next iteration of the loop
         # create new return dict
         return_dict = new unordered_map[unsigned int, unsigned long]()
 
@@ -314,18 +316,16 @@ cdef void compute_pairs_iterative(  \
                 # region_counts_1
                 dereference(return_dict)[item2.first] = item2.second
 
-
-        while return_dict.size() > 10:
-
+        # delete smallest object counts in return dict until it has keep_objs_per_edge counts left
+        while return_dict.size() > keep_objs_per_edge:
             # find smallest object count
-            smallest_key = dereference(return_dict.begin()).first
+            key_smallest_count = dereference(return_dict.begin()).first
             smallest_count = dereference(return_dict.begin()).second
             for item in dereference(return_dict):
                 if item.second < smallest_count:
-                    smallest_key = item.first
-            
+                    key_smallest_count = item.first
             # delete key with smallest count
-            return_dict.erase(smallest_key)
+            return_dict.erase(key_smallest_count)
 
 
 
