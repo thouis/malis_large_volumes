@@ -83,7 +83,6 @@ def build_tree(labels, edge_weights, neighborhood):
     cdef int [:] region_parents
     cdef int [:, :] edge_tree
 
-
     # get shape information
     D, W, H = labels.shape
 
@@ -195,7 +194,7 @@ cdef struct stackelement:
     int edge_tree_idx
     int child_1_status
     int child_2_status
-    unordered_map[unsigned int, unsigned int]* region_counts_1
+    unordered_map[unsigned int, unsigned long]* region_counts_1
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -205,16 +204,14 @@ cdef void compute_pairs_iterative(  \
                 int[:, :] neighborhood, 
                 int[:, :] edge_tree, 
                 int edge_tree_idx, 
-                unsigned int[:, :, :, :] pos_pairs, 
-                unsigned int[:, :, :, :] neg_pairs) nogil:
+                unsigned long[:, :, :, :] pos_pairs, 
+                unsigned long[:, :, :, :] neg_pairs) nogil:
 
     cdef int linear_edge_index, child_1, child_2
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
     cdef int return_idxes[4]
     cdef int[:] offset
-#    cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2 
-    cdef unordered_map[unsigned int, unsigned int] *return_dict, *region_counts_2
-
+    cdef unordered_map[unsigned int, unsigned long] *return_dict, *region_counts_2
     cdef stack[stackelement*] mystack
     cdef stackelement *stackentry, *next_stackentry
 
@@ -243,7 +240,7 @@ cdef void compute_pairs_iterative(  \
             child_1 = edge_tree[stackentry.edge_tree_idx, 1]
             if child_1 == -1:
                 # add this region count to the current stackentry
-                stackentry.region_counts_1 = new unordered_map[uint, uint]()
+                stackentry.region_counts_1 = new unordered_map[unsigned int, unsigned long]()
                 dereference(stackentry.region_counts_1)[labels[d_1, w_1, h_1]] = 1
                 stackentry.child_1_status = 2
             else:
@@ -271,7 +268,7 @@ cdef void compute_pairs_iterative(  \
                 h_2 = h_1 + offset[2]
 
                 # create new region_counts_2
-                region_counts_2 = new unordered_map[uint, uint]()
+                region_counts_2 = new unordered_map[unsigned int, unsigned long]()
                 # add this region count to the current stackentry
                 dereference(region_counts_2)[labels[d_2, w_2, h_2]] = 1
             else:
@@ -298,7 +295,7 @@ cdef void compute_pairs_iterative(  \
                     neg_pairs[d_1, w_1, h_1, k] += item1.second * item2.second
 
         # create new return dict
-        return_dict = new unordered_map[uint, uint]()
+        return_dict = new unordered_map[unsigned int, unsigned long]()
 
         # add counts to return_dict
         for item1 in dereference(stackentry.region_counts_1):
@@ -316,19 +313,24 @@ cdef void compute_pairs_iterative(  \
     del return_dict
 
 
-cdef unordered_map[unsigned int, unsigned int] compute_pairs_recursive(  \
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
                                                 unsigned int[:, :, :] labels,
                                                 int[::1] ew_shape,
                                                 int[:, :] neighborhood, 
                                                 int[:, :] edge_tree, 
                                                 int edge_tree_idx, 
-                                                unsigned int[:, :, :, :] pos_pairs, 
-                                                unsigned int[:, :, :, :] neg_pairs) nogil:
+                                                unsigned long[:, :, :, :] pos_pairs, 
+                                                unsigned long[:, :, :, :] neg_pairs) nogil:
+    """ This function has been deprecated in favor of compute_pairs_recursive """
+
     cdef int linear_edge_index, child_1, child_2
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2, counter
     cdef int return_idxes[4]
     cdef int[:] offset
-    cdef unordered_map[unsigned int, unsigned int] region_counts_1, region_counts_2, return_dict
+    cdef unordered_map[unsigned int, unsigned long] region_counts_1, region_counts_2, return_dict
 
 
 
@@ -400,8 +402,8 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
     cdef int [:, :] neighborhood_view = neighborhood
     cdef int [:, :] edge_tree_view = edge_tree
     cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
-    cdef unsigned int [:, :, :, :] pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
-    cdef unsigned int [:, :, :, :] neg_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
+    cdef unsigned long [:, :, :, :] pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint64)
+    cdef unsigned long [:, :, :, :] neg_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint64)
 
     # process tree from root (later in array) to leaves (earlier)
     cdef int idx

@@ -10,8 +10,7 @@ from malis_large_volumes import malis_cython, malis_python
 
 
 if __name__ == '__main__':
-    depth_size_range = [5]
-#    max_stack_vec = np.zeros(len(depth_size_range))
+    depth_size_range = [40]
     vol_size_vec = np.zeros(len(depth_size_range))
     height_and_width = 1000
 
@@ -47,15 +46,16 @@ if __name__ == '__main__':
 
         print("\nImage is of size: " + str(labels.shape))
         print("\ncython:")
+
+        # Computing tree
         start_time = time.time()
         edge_tree_cython = malis_cython.build_tree(labels, weights, neighborhood)
         end_time = time.time()
         print("Tree computation time: " + str(end_time - start_time))
-#        check_tree(edge_tree_cython)
+
+        # Computing pairs
         start_time = time.time()
         pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree_cython.copy())
-#        max_stack_vec[i] = max_stack
-#        print("Max stack: " + str(max_stack))
         end_time = time.time()
         print("Pair computation time: " + str(end_time - start_time))
 
@@ -65,34 +65,3 @@ if __name__ == '__main__':
         pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
         end_time = time.time()
         print("Turaga computation time: " + str(end_time - start_time))
-
-#    plt.figure()
-#    plt.plot(vol_size_vec, max_stack_vec)
-#    plt.xlabel("Number of voxels")
-#    plt.ylabel("Maximal tree depth")
-#    plt.show()
-
-        # test meta method that combines tree and pair computation
-#        print("Testing convenience function pairs()")
-#        pos_pairs, neg_pairs = pairs(labels, weights, neighborhood)
-
-#        # regular python
-#        print("\nregular python:")
-#        start_time = time.time()
-#        edge_tree_python = malis_python.build_tree(labels, weights, neighborhood)
-#        end_time = time.time()
-#        print("Time: " + str(end_time - start_time))
-#        check_tree(edge_tree_python)
-#
-#        print("edge tree indices ")
-#        print(edge_tree[:10, 0])
-#        print("edge tree cython indices ")
-#        print(edge_tree_cython[:10, 0])
-#        print("Both indices in edge trees equal: " + str(np.all(edge_tree_cython[:, 0] == edge_tree[:, 0])))
-#        print("Both edge trees equal: " + str(np.all(edge_tree_cython == edge_tree)))
-#        pdb.set_trace()
-#        start_time = time.time()
-#        costs = malis_python.compute_costs(labels, weights, neighborhood, edge_tree_python, "neg")
-#        end_time = time.time()
-#        print("Cost computation time: " + str(end_time - start_time))
-#        print("Sum of costs: " + str(np.sum(costs)))
