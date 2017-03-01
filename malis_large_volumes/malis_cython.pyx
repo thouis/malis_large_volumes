@@ -303,6 +303,7 @@ cdef void compute_pairs_iterative(  \
             for item in dereference(return_dict):
                 if item.second < smallest_count:
                     key_smallest_count = item.first
+                    smallest_count = item.second
             # delete key with smallest count
             return_dict.erase(key_smallest_count)
 
