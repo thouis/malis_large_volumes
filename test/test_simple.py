@@ -18,7 +18,7 @@ neighborhood = np.array([[-1, 0, 0],
                          [0, 0, -1]], dtype=np.int32)
 
 edge_tree = malis_cython.build_tree(labels, weights, neighborhood)
-pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree, keep_objs_per_edge=2)
+pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree)
 assert neg_pairs[2, 0, 0, 3] == 9, "neg pairs result was incorrect"
 
 # compare with turagas implementation
@@ -62,7 +62,7 @@ labels = np.random.randint(1, 10, size=(10, 20, 20), dtype=np.uint32)
 weights = np.random.normal(loc=0.5, scale=0.1, size=(3,) + labels.shape).astype(np.float)
 
 edge_tree = malis_cython.build_tree(labels, weights, neighborhood)
-pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree, keep_objs_per_edge=15)
+pos_pairs, neg_pairs = malis_cython.compute_pairs(labels, weights, neighborhood, edge_tree, keep_objs_per_edge=20)
 
 # compare with turagas implementation
 pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights, 

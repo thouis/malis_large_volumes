@@ -2,7 +2,6 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from cython.view cimport array as cvarray
-#from .argsort_int32 import qargsort32
 from .malis_python import merge as merge_python
 from .malis_python import chase as chase_python
 import sys
@@ -10,17 +9,6 @@ from libcpp.unordered_map cimport unordered_map
 from libcpp.stack cimport stack
 from libc.stdlib cimport malloc, free, realloc
 from cython.operator cimport dereference
-sys.setrecursionlimit(8000)
-
-
-#@cython.boundscheck(False)
-#@cython.wraparound(False)
-#cdef int merge(unsigned int [:] id_table, int idx_from, int idx_to) nogil:
-#    cdef int old
-#    if id_table[idx_from] != idx_to:
-#        old = id_table[idx_from]
-#        id_table[idx_from] = idx_to
-#        merge(id_table, old, idx_to)
 
 
 @cython.boundscheck(False)
@@ -104,7 +92,6 @@ def build_tree(labels, edge_weights, neighborhood):
     edge_tree = - np.ones((D * W * H, 3), dtype=np.int32)
 
     # sort array and get corresponding indices
-#    cdef unsigned int [:] ordered_indices = qargsort32(ew_flat)[::-1]
     cdef unsigned int [:] ordered_indices = ew_flat.argsort()[::-1].astype(np.uint32)
 
     cdef int order_index = 0 # index into edge tree
@@ -143,7 +130,6 @@ def build_tree(labels, edge_weights, neighborhood):
                 (not 0 <= h_2 < H)):
                 continue
 
-            # 
             orig_label_1 = merged_labels[d_1, w_1, h_1]
             orig_label_2 = merged_labels[d_2, w_2, h_2]
 
@@ -181,14 +167,7 @@ def build_tree(labels, edge_weights, neighborhood):
     return np.asarray(edge_tree)
 
 
-
-
-
-########################################################################################
-# compute pairs (instead of costs) methods
-
-
-
+# the following struct will hold information about recursion while traversing the tree
 cdef struct stackelement:
     int edge_tree_idx
     int child_1_status
@@ -327,10 +306,6 @@ cdef void compute_pairs_iterative(  \
             # delete key with smallest count
             return_dict.erase(key_smallest_count)
 
-
-
-
-
         # free region counts and the stackentry. Remember we are using return_dict in the next
         # iteration of the loop so we need it
         free(stackentry)
@@ -444,6 +419,6 @@ def compute_pairs(labels, edge_weights, neighborhood, edge_tree, keep_objs_per_e
             continue
         with nogil:
             compute_pairs_iterative(labels_view, ew_shape, neighborhood_view,
-                                    edge_tree_view, idx, pos_pairs, neg_pairs, int(keep_objs))
+                                    edge_tree_view, idx, pos_pairs, neg_pairs, keep_objs)
 
     return np.array(pos_pairs), np.array(neg_pairs)

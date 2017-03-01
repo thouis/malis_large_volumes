@@ -11,7 +11,7 @@ import malis.malis_pair_wrapper as malis_pairs_wrapper_turaga
 
 
 if __name__ == '__main__':
-    depth_size_range = [60]
+    depth_size_range = [5]
     vol_size_vec = np.zeros(len(depth_size_range))
     height_and_width = 1000
 
@@ -65,9 +65,11 @@ if __name__ == '__main__':
 
         ######################################################################
         # Compare with S. Turagas malis implementation
-#        start_time = time.time()
-#        pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights, 
-#                                                                 labels.astype(np.int64),
-#                                                                 ignore_background=False)
-#        end_time = time.time()
-#        print("Turaga computation time: " + str(end_time - start_time))
+        print("Starting mais by S. Turaga for comparison")
+        print("Careful: on big patches this will run out of memory")
+        start_time = time.time()
+        pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights, 
+                                                                 labels.astype(np.int64),
+                                                                 ignore_background=False)
+        end_time = time.time()
+        print("Turaga computation time: " + str(end_time - start_time))
