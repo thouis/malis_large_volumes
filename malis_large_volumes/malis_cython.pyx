@@ -329,7 +329,7 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
                                                 unsigned long[:, :, :, :] neg_pairs) nogil:
     """ 
     !!!
-    !!! This function has been deprecated in favor of compute_pairs_recursive 
+    !!! This function has been deprecated in favor of compute_pairs_iterative 
     !!!
     """
 

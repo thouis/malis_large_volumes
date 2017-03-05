@@ -9,6 +9,7 @@ def pairs_python(labels, edge_weights, neighborhood=None):
     This function simply combines the build_tree and compute_pairs functions
     """
 
+    labels = labels.astype(np.uint32)
     if neighborhood is None:
         print("No neighboorhood provided, using 3d NN neighboorhood")
         neighborhood = np.array([[-1, 0, 0],
@@ -22,7 +23,7 @@ def pairs_cython(labels, edge_weights, neighborhood=None):
     """
     This function simply combines the build_tree and compute_pairs functions
     """
-    labels = labels.astype(np.int32)
+    labels = labels.astype(np.uint32)
 
     if neighborhood is None:
         print("No neighboorhood provided, using 3d NN neighboorhood")
