@@ -404,7 +404,7 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
     return return_dict
 
 
-def compute_pairs(labels, edge_weights, neighborhood, edge_tree, keep_objs_per_edge=10):
+def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree, keep_objs_per_edge=10):
     cdef unsigned int [:, :, :] labels_view = labels
     cdef int [:, :] neighborhood_view = neighborhood
     cdef int [:, :] edge_tree_view = edge_tree

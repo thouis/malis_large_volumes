@@ -236,7 +236,7 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
     return return_dict
 
 
-def compute_pairs(labels, edge_weights, neighborhood, edge_tree):
+def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree):
     pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
     neg_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
 
