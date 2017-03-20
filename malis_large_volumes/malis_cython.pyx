@@ -315,8 +315,6 @@ cdef void compute_pairs_iterative(  \
         mystack.pop()
     del return_dict
 
-
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
@@ -338,7 +336,6 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
     cdef int return_idxes[4]
     cdef int[:] offset
     cdef unordered_map[unsigned int, unsigned long] region_counts_1, region_counts_2, return_dict
-
 
 
     linear_edge_index = edge_tree[edge_tree_idx, 0]
@@ -399,8 +396,6 @@ cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
         counter += 1
         if counter == 10:
             break
-
-
     return return_dict
 
 
@@ -421,5 +416,4 @@ def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree, keep_
         with nogil:
             compute_pairs_iterative(labels_view, ew_shape, neighborhood_view,
                                     edge_tree_view, idx, pos_pairs, neg_pairs, keep_objs)
-
     return np.array(pos_pairs), np.array(neg_pairs)
