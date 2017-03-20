@@ -9,7 +9,7 @@ http://papers.nips.cc/paper/3887-maximin-affinity-learning-of-image-segmentation
 
 ## Why another implementation?
 There is already a fast c++ implementation at github.com/turagalab/malis. So why did we reimplement this?
-The existing implementation is not as memory efficient as possible, and becomes prohibitively memory-demanding
+The existing implementation is not as memory efficient as possible, and it becomes prohibitively memory-demanding
 to compute malis for large volumes (hence the name malis_large_volumes here). This implementation computes malis with a
 lower memory footprint, but unfortunately at the cost of more computation time.
 
