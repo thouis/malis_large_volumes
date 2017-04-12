@@ -101,11 +101,11 @@ def build_tree(labels, edge_weights, neighborhood):
     cdef int [:] offset
     cdef int [::1] ew_shape = np.array(edge_weights.shape).astype(np.int32)
     cdef int return_idxes[4]
-    cdef int n_loops = len(ordered_indices)
+    cdef int n_loop_iterations = len(ordered_indices)
     cdef int i
 
     with nogil:
-        for i in range(n_loops):
+        for i in range(n_loop_iterations):
             edge_idx = ordered_indices[i]
             # the size of ordered_indices is k times bigger than the amount of
             # voxels, but the amount of merger edges is much smaller
@@ -271,7 +271,9 @@ cdef void compute_pairs_iterative(  \
         for item1 in dereference(stackentry.region_counts_1):
             for item2 in dereference(region_counts_2):
 
-                if item1.first == item2.first:
+                if item1.first == item2.first and \
+                    not item1.first == 0 and \
+                    not item2.first == 0:
                     pos_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
                 else:
                     neg_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
