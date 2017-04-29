@@ -7,6 +7,10 @@ def get_pairs(labels, edge_weights, neighborhood=None,
               keep_objs_per_edge=20):
     """
     This function simply combines the build_tree and compute_pairs functions
+    pos_pairs: numpy array of shape (3,) + labels.shape
+               matching pairs
+    neg_pairs: numpy array of shape (3,) + labels.shape
+               nonmatching pairs
     """
     labels = labels.astype(np.uint32)
     if neighborhood is None:
@@ -18,10 +22,19 @@ def get_pairs(labels, edge_weights, neighborhood=None,
                                                 keep_objs_per_edge=keep_objs_per_edge)
 
 
+""" 
+You should only use this function if you can't install cython for some reason
+"""
 def get_pairs_python(labels, edge_weights, neighborhood=None,
                      keep_objs_per_edge=20):
     """
     This function simply combines the build_tree and compute_pairs functions
+    
+    returns:
+    pos_pairs: numpy array of shape (3,) + labels.shape
+               matching pairs
+    neg_pairs: numpy array of shape (3,) + labels.shape
+               nonmatching pairs
     """
     labels = labels.astype(np.uint32)
     if neighborhood is None:
