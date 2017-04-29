@@ -1,10 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import pdb
 import time
-import malis_large_volumes
 from test_tools import check_tree
-from malis_large_volumes import malis_cython, malis_python
+from malis_large_volumes import pairs_cython
 import malis.malis_pair_wrapper as malis_pairs_wrapper_turaga
 
 
@@ -47,13 +44,13 @@ for i, depth_size in enumerate(depth_size_range):
 
     # Computing tree
     start_time = time.time()
-    edge_tree_cython = malis_cython.build_tree(labels, weights, neighborhood)
+    edge_tree_cython = pairs_cython.build_tree(labels, weights, neighborhood)
     end_time = time.time()
     print("Tree computation time: " + str(end_time - start_time))
 
     # Computing pairs
     start_time = time.time()
-    pos_pairs, neg_pairs = malis_cython.compute_pairs_with_tree(labels, weights,
+    pos_pairs, neg_pairs = pairs_cython.compute_pairs_with_tree(labels, weights,
                                                       neighborhood,
                                                       edge_tree_cython.copy(),
                                                       keep_objs_per_edge=20)
