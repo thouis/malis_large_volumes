@@ -22,19 +22,30 @@ malis = mk.Malis(pos_loss_weight=0.5)
 pairs_var = tf.placeholder(tf.float32, name="pairs")
 affinities_var = tf.placeholder(tf.float32, name="affinities")
 loss_var = malis.pairs_to_loss_keras(pairs_var, affinities_var)
+affinities_grad = tf.gradients(loss_var, [affinities_var])[0]
 
 affinities = affinities[na, :]
 all_pairs = all_pairs[na, :]
 with tf.Session() as sess:
     loss = sess.run(loss_var, feed_dict={pairs_var: all_pairs,
                                   affinities_var: affinities})
+    gradient = sess.run(affinities_grad, feed_dict={pairs_var: all_pairs,
+                                                    affinities_var: affinities})
+
 
 # analytically expected loss:
 analytic_loss = (3 + 3) * (1-0.7) ** 2 + 9 * (0.3 ** 2)
+analytic_gradient = 2 * 9 * 0.3
 
 print("The computed loss is: " + str(loss[0]))
 print("The analytically expected loss is: " + str(analytic_loss))
 assert np.isclose(analytic_loss, loss, atol=0.1)
+
+gradient = gradient[0, 2, 0, 0, 3]
+print("The computed gradient at the 'border' affinity is: " + str(gradient))
+print("The analytically expected gradient is: " + str(analytic_gradient))
+assert np.isclose(analytic_gradient, gradient, atol=0.1)
+
 
 print("Test 1 finished, no error")
 
