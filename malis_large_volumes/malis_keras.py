@@ -42,6 +42,7 @@ class Malis:
         # get the total loss at each element
         elemwise_total_loss = pos_loss + neg_loss
         malis_loss = K.sum(elemwise_total_loss, axis=(1, 2, 3, 4))
+        malis_loss = malis_loss * 2 # because of the pos_loss_weight and neg_loss_weight
         return malis_loss
 
 
