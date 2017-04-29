@@ -79,7 +79,7 @@ class Malis:
         neg_loss = pred**2 * neg_pairs * loss_mask * self.neg_loss_weight
         # get the total loss at each element
         elemwise_total_loss = pos_loss + neg_loss
-        malis_loss = np.sum(elemwise_total_loss, axis=(1, 2, 3, 4))
-        pos_loss = np.sum(pos_loss, axis=(1, 2, 3, 4))
-        neg_loss = np.sum(neg_loss, axis=(1, 2, 3, 4))
+        malis_loss = np.sum(elemwise_total_loss, axis=(1, 2, 3, 4)) * 2
+        pos_loss = np.sum(pos_loss, axis=(1, 2, 3, 4)) * 2
+        neg_loss = np.sum(neg_loss, axis=(1, 2, 3, 4)) * 2
         return malis_loss, pos_loss, neg_loss
