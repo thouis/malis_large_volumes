@@ -49,8 +49,11 @@ class Malis:
     def pairs_to_loss_python(self, pairs, pred):
         """
         Input:
-        positive pairs [batch_size, K, D, W, H]
-        negative pairs [batch_size, K, D, W, H]
+        pairs [batch_size, 2*K, D, W, H]
+              pairs contains both the matching and nonmatching pairs.
+              On axis 1, the first three slices are for the matching pairs
+              and the last three for the nonmatching pairs (there are always
+              3 for the three directions in which there are affinities)
         pred [batch_size, K, D, W, H]
 
         Returns:
