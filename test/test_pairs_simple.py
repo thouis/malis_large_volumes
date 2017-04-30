@@ -18,7 +18,8 @@ neighborhood = np.array([[-1, 0, 0],
                          [0, -1, 0],
                          [0, 0, -1]], dtype=np.int32)
 
-edge_tree = pairs_cython.build_tree(labels, weights, neighborhood)
+edge_tree = pairs_cython.build_tree(labels, weights, neighborhood,
+                                    stochastic_malis_param=0)
 pos_pairs, neg_pairs = pairs_cython.compute_pairs_with_tree(labels, weights, neighborhood, edge_tree)
 assert neg_pairs[2, 0, 0, 3] == 9, "neg pairs result was incorrect"
 

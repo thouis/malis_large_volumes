@@ -34,7 +34,6 @@ cdef void my_unravel_index(int flat_idx, int [::1] shape, int[4] return_idxes) n
     cdef int current_stride
 
     for dim in range(len_shape):
-
         # compute stride of dimension dim by multiplying the dimensions
         # from the current dim to the final dimension
         current_stride = 1
@@ -46,10 +45,32 @@ cdef void my_unravel_index(int flat_idx, int [::1] shape, int[4] return_idxes) n
         flat_idx = flat_idx % current_stride
 
 
+def scramble_sort(array, stochastic_malis_param):
+    """
+    This function scrambles a pre-sorted array. The
+    stochastic malis_param controls how much it gets scrambled,
+    higher means more scrambled
+    """
+    if stochastic_malis_param == 0:
+        return array
+    
+    for array_idx in range(len(array)):
+        # only move every 2nd item
+        if np.random.uniform() < 0.5:
+            continue
+        move_by = np.random.randint(0, stochastic_malis_param)
+        move_to_idx = array_idx - move_by
+        if  move_to_idx > 0:
+            aux = array[array_idx]
+            array[array_idx] = array[move_to_idx]
+            array[move_to_idx] = aux
+    return array
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def build_tree(labels, edge_weights, neighborhood):
+
+#@cython.boundscheck(False)
+#@cython.wraparound(False)
+def build_tree(labels, edge_weights, neighborhood,
+               stochastic_malis_param=0):
     '''find tree of edges linking regions.
         labels = (D, W, H) integer label volume.  0s ignored
         edge_weights = (K, D, W, H) floating point values.
@@ -93,6 +114,9 @@ def build_tree(labels, edge_weights, neighborhood):
 
     # sort array and get corresponding indices
     cdef unsigned int [:] ordered_indices = ew_flat.argsort()[::-1].astype(np.uint32)
+
+    # scramble the sorting a bit
+    ordered_indices = scramble_sort(ordered_indices, stochastic_malis_param)
 
     cdef int order_index = 0 # index into edge tree
     cdef int edge_idx
@@ -316,89 +340,6 @@ cdef void compute_pairs_iterative(  \
         del region_counts_2
         mystack.pop()
     del return_dict
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef unordered_map[unsigned int, unsigned long] compute_pairs_recursive(  \
-                                                unsigned int[:, :, :] labels,
-                                                int[::1] ew_shape,
-                                                int[:, :] neighborhood, 
-                                                int[:, :] edge_tree, 
-                                                int edge_tree_idx, 
-                                                unsigned long[:, :, :, :] pos_pairs, 
-                                                unsigned long[:, :, :, :] neg_pairs) nogil:
-    """ 
-    !!!
-    !!! This function has been deprecated in favor of compute_pairs_iterative 
-    !!!
-    """
-
-    cdef int linear_edge_index, child_1, child_2
-    cdef int d_1, w_1, h_1, k, d_2, w_2, h_2, counter
-    cdef int return_idxes[4]
-    cdef int[:] offset
-    cdef unordered_map[unsigned int, unsigned long] region_counts_1, region_counts_2, return_dict
-
-
-    linear_edge_index = edge_tree[edge_tree_idx, 0]
-    child_1 = edge_tree[edge_tree_idx, 1]
-    child_2 = edge_tree[edge_tree_idx, 2]
-    my_unravel_index(linear_edge_index, ew_shape, return_idxes)
-    k = return_idxes[0]
-    d_1 = return_idxes[1]
-    w_1 = return_idxes[2]
-    h_1 = return_idxes[3]
-
-    if child_1 == -1:
-        # first child is a voxel.  Compute its location
-
-        region_counts_1[labels[d_1, w_1, h_1]] =  1
-    else:
-        # recurse first child
-        region_counts_1 = compute_pairs_recursive(labels, ew_shape, neighborhood,
-                                                  edge_tree, child_1, pos_pairs, neg_pairs)
-
-    if child_2 == -1:
-        # second child is a voxel.  Compute its location via neighborhood.
-        offset = neighborhood[k, :]
-        d_2 = d_1 + offset[0]
-        w_2 = w_1 + offset[1]
-        h_2 = h_1 + offset[2]
-        region_counts_2[labels[d_2, w_2, h_2]] = 1
-    else:
-        # recurse second child
-        region_counts_2 = compute_pairs_recursive(labels, ew_shape, neighborhood,
-                                                  edge_tree, child_2, pos_pairs, neg_pairs)
-
-    # mark this edge as done so recursion doesn't hit it again
-    edge_tree[edge_tree_idx, 0] = -1
-
-    for item1 in region_counts_1:
-        for item2 in region_counts_2:
-
-            if item1.first == item2.first:
-                pos_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
-            else:
-                neg_pairs[k, d_1, w_1, h_1] += item1.second * item2.second
-
-    counter = 0
-    # add counts to return_dict
-    for item1 in region_counts_1:
-        return_dict[item1.first] = item1.second
-        counter += 1
-        if counter == 10:
-            break
-
-    counter = 0
-    for item2 in region_counts_2:
-        if return_dict.count(item2.first) == 1:
-            return_dict[item2.first] += item2.second
-        else:
-            return_dict[item2.first] = item2.second
-        counter += 1
-        if counter == 10:
-            break
-    return return_dict
 
 
 def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree, keep_objs_per_edge=10):

@@ -15,7 +15,8 @@ affinities = np.zeros(shape=(3,) + labels.shape)
 affinities[2, :, :, :] = np.array([[[.7, .7, .7, .3, .7, .7]]], dtype=np.float64)
 affinities += np.random.normal(size=affinities.shape, scale=.0001)
 
-pos_pairs, neg_pairs = malis_large_volumes.get_pairs(labels, affinities)
+pos_pairs, neg_pairs = malis_large_volumes.get_pairs(labels, affinities,
+                          stochastic_malis_param=0)
 all_pairs = np.concatenate((pos_pairs, neg_pairs), axis=0).astype(np.float32)
 malis = mk.Malis(pos_loss_weight=0.5)
 
