@@ -7,7 +7,7 @@ import malis.malis_pair_wrapper as malis_pairs_wrapper_turaga
 
 #######################################################
 # TEST 1
-print("Starting test 1")
+print("\nStarting test 1")
 labels = np.array([[[1, 1, 1, 2, 2, 2]]], dtype=np.uint32)
 weights = np.zeros(shape=(3,) + labels.shape)
 weights[2, :, :, :] = np.array([[[.2, .2, .2, .1, .2, .2]]], dtype=np.float) 
@@ -20,7 +20,8 @@ neighborhood = np.array([[-1, 0, 0],
 
 edge_tree = pairs_cython.build_tree(labels, weights, neighborhood,
                                     stochastic_malis_param=0)
-pos_pairs, neg_pairs = pairs_cython.compute_pairs_with_tree(labels, weights, neighborhood, edge_tree)
+pos_pairs, neg_pairs = pairs_cython.compute_pairs_with_tree(labels, weights,
+        neighborhood, edge_tree, count_method=0)
 assert neg_pairs[2, 0, 0, 3] == 9, "neg pairs result was incorrect"
 
 # compare with turagas implementation
@@ -30,7 +31,7 @@ pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights,
 #pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
 assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
 assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
-print("Test 1 finished, no error")
+print("Test 1 finished, no error\n")
 
 
 #######################################################
@@ -53,7 +54,7 @@ pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights,
                                                          ignore_background=False)
 assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
 assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
-print("Test 2 finished, no error")
+print("Test 2 finished, no error\n")
 
 
 #######################################################
@@ -73,12 +74,12 @@ pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights,
 try:
     assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
     assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
-    print("Test 3 finished, no error")
+    print("Test 3 finished, no error\n")
 except:
     print("Test 3 FAILED!")
     print("Tree-malis was not the same as Turaga-malis.")
     print("However, this happens sometimes and I assume it's due to differences in " + \
-          "sorting the edges. Try running the tests again and see if it fails again.")
+          "sorting the edges. Try running the tests again and see if it fails again.\n")
 
 #######################################################
 
@@ -92,5 +93,5 @@ pos_pairs_from_wrapper, neg_pairs_from_wrapper = malis_large_volumes.get_pairs(\
 
 assert np.all(pos_pairs == pos_pairs_from_wrapper), "pos pairs was not same as pos pairs from wrapper"
 assert np.all(neg_pairs == neg_pairs_from_wrapper), "neg pairs was not same as neg pairs from wrapper"
-print("Test 4 finished, no error")
+print("Test 4 finished, no error\n")
 #######################################################
