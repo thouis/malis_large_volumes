@@ -172,10 +172,8 @@ def build_tree(labels, edge_weights, neighborhood,
             # merge regions
             new_label = min(region_label_1, region_label_2)
             if new_label != region_label_1:
-                merged_labels_raveled[orig_label_1] = new_label
                 merged_labels_raveled[region_label_1] = new_label
             else:
-                merged_labels_raveled[orig_label_2] = new_label
                 merged_labels_raveled[region_label_2] = new_label
 
             # store parent edge of region by location in tree
