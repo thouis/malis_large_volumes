@@ -297,8 +297,8 @@ cdef void compute_pairs_iterative(  \
                 if count_method == 0:
                     paircount = item1.second * item2.second
                 elif count_method == 1:
-                    paircount = item1.second * <int>log(item2.second) + \
-                                <int>log(item1.second) * item2.second
+                    paircount = item1.second * <int>log(item2.second+1) + \
+                                <int>log(item1.second+1) * item2.second
                 if item1.first == item2.first and \
                     not item1.first == 0 and \
                     not item2.first == 0:
