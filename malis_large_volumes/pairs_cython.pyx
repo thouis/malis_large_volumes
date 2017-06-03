@@ -294,19 +294,24 @@ cdef void compute_pairs_iterative(  \
 
         for item1 in dereference(stackentry.region_counts_1):
             for item2 in dereference(region_counts_2):
-                if count_method == 0:
-                    paircount = item1.second * item2.second
-                elif count_method == 1:
-                    paircount = item1.second * <int>log(item2.second+1) + \
-                                <int>log(item1.second+1) * item2.second
-                if item1.first == item2.first and \
-                    not item1.first == 0 and \
-                    not item2.first == 0:
-                    # the labels were the same -> positive count
-                    pos_pairs[k, d_1, w_1, h_1] += paircount
-                else:
-                    # the labels were different or they were 0 (background)
-                    neg_pairs[k, d_1, w_1, h_1] += paircount
+#                if count_method == 0:
+#                    paircount = item1.second * item2.second
+#                elif count_method == 1:
+#                    paircount = item1.second * <int>log(item2.second) + \
+#                                <int>log(item1.second) * item2.second
+#                if item1.first == item2.first and \
+#                    not item1.first == 0 and \
+#                    not item2.first == 0:
+#                    # the labels were the same -> positive count
+#                    pos_pairs[k, d_1, w_1, h_1] += paircount
+#                else:
+#                    # the labels were different or they were 0 (background)
+#                    neg_pairs[k, d_1, w_1, h_1] += paircount
+                    pos_pairs[k, d_1, w_1, h_1] += item1.second
+                    neg_pairs[k, d_1, w_1, h_1] += item2.second
+                
+                 
+
 
         #########################################################################
         # Prepare return dict that will be used in the next iteration of the loop
