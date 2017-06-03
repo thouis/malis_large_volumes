@@ -68,8 +68,8 @@ def scramble_sort(array, stochastic_malis_param):
     return array
 
 
-#@cython.boundscheck(False)
-#@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def build_tree(labels, edge_weights, neighborhood,
                stochastic_malis_param=0):
     '''find tree of edges linking regions.
