@@ -219,7 +219,7 @@ cdef void compute_pairs_iterative(  \
     cdef stackelement *stackentry, *next_stackentry
     cdef int key_smallest_count # used to determine smalles object counts
     cdef unsigned long smallest_count
-    cdef int paircount
+    cdef unsigned long paircount
 
     # create the first entry on the stack
     next_stackentry = <stackelement*> malloc(sizeof(stackelement))
