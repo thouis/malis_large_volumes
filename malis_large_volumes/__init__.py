@@ -23,14 +23,15 @@ def get_pairs(labels, edge_weights, neighborhood=None,
         keep_objs_per_edge=keep_objs_per_edge, count_method=count_method)
 
 
-""" 
-You should only use this function if you can't install cython for some reason
-"""
+# create alias
+get_pairs_cython = get_pairs
+
+
 def get_pairs_python(labels, edge_weights, neighborhood=None,
                      keep_objs_per_edge=20):
     """
     This function simply combines the build_tree and compute_pairs functions
-    
+
     returns:
     pos_pairs: numpy array of shape (3,) + labels.shape
                matching pairs
