@@ -23,7 +23,7 @@ def get_pairs(labels, edge_weights, neighborhood=None,
         keep_objs_per_edge=keep_objs_per_edge, count_method=count_method)
 
 
-# create alias
+# create alias (for consistencty in test_suite only)
 get_pairs_cython = get_pairs
 
 

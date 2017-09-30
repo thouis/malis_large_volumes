@@ -216,7 +216,9 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
     return_dict = {}
     for key1, counts1 in region_counts_1.items():
         for key2, counts2 in region_counts_2.items():
-            if key1 == key2:
+            if key1 == key2 \
+            and not key1 == 0 \
+            and not key2 == 0:
                 pos_pairs[k, d_1, w_1, h_1] += counts1 * counts2
             else:
                 neg_pairs[k, d_1, w_1, h_1] += counts1 * counts2
