@@ -75,25 +75,24 @@ def build_tree(labels, edge_weights, neighborhood,
     '''find tree of edges linking regions.
 
     params:
-    labels: (D, W, H) integer
-        labels.
-    edge_weights: (K, D, W, H) float
-        Kth entry corresponds to Kth offset in neighborhood.
-    neighborhood: (K, 3)
-        offsets from pixel to linked pixel.
+        labels: (D, W, H) integer
+            labels.
+        edge_weights: (K, D, W, H) float
+            Kth entry corresponds to Kth offset in neighborhood.
+        neighborhood: (K, 3)
+            offsets from pixel to linked pixel.
 
     returns:
-    edge tree (3, D * W * H) (int32)
-        each row corresponds to one edge
+        edge tree (3, D * W * H) (int32)
+            each row corresponds to one edge
 
-        first column
-            index into the flattened edge array,
-            indicates which edge the current row corresponds to 
-        second, third column
-            are indices into edge_tree itself (not flattened edge array!)
-            indicate the rows in edge_tree that are the parents of the two sub regions
-            -1 means the sub-region is just the voxel that the edge connects
-
+            first column
+                index into the flattened edge array,
+                indicates which edge the current row corresponds to 
+            second, third column
+                are indices into edge_tree itself (not flattened edge array!)
+                indicate the rows in edge_tree that are the parents of the two sub regions
+                -1 means the sub-region is just the voxel that the edge connects
     '''
     cdef int [:, :] neighborhood_view = neighborhood
     cdef int D, W, H
@@ -207,9 +206,10 @@ cdef struct stackelement:
     int child_2_status
     unordered_map[unsigned int, unsigned long]* region_counts_1
 
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef void compute_pairs_iterative(  \
+cdef void compute_pairs_iterative(
                 unsigned int[:, :, :] labels,
                 int[::1] ew_shape,
                 int[:, :] neighborhood, 

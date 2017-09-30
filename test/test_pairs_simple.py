@@ -109,8 +109,9 @@ def test(pairs_module, get_pairs):
 
 
 if __name__ == "__main__":
+    print("Testing Cython implementation")
+    test(pairs_cython, get_pairs_cython)
+
     print("Testing Python implementation")
     test(pairs_python, get_pairs_python)
 
-    print("Testing Cython implementation")
-    test(pairs_cython, get_pairs_cython)

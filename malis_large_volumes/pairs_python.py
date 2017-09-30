@@ -1,19 +1,11 @@
 import numpy as np
 import pyximport
-pyximport.install(setup_args={'include_dirs': [np.get_include()]})
 
 
 def chase(id_table, idx):
     if id_table[idx] != idx:
         id_table[idx] = chase(id_table, id_table[idx])
     return id_table[idx]
-
-
-def merge(id_table, idx_from, idx_to):
-    if id_table[idx_from] != idx_to:
-        old = id_table[idx_from]
-        id_table[idx_from] = idx_to
-        merge(id_table, old, idx_to)
 
 
 def build_tree(labels, edge_weights, neighborhood,
@@ -56,7 +48,7 @@ def build_tree(labels, edge_weights, neighborhood,
         # get the positions of the two voxels linked by current edge
         k, d_1, w_1, h_1 = np.unravel_index(edge_idx, edge_weights.shape)
         offset = neighborhood[k, ...]
-        d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
+        d_2, w_2, h_2 = (int(o + d) for o, d in zip(offset, (d_1, w_1, h_1)))
 
         # ignore out-of-volume links
         if ((not 0 <= d_2 < D) or
@@ -65,7 +57,7 @@ def build_tree(labels, edge_weights, neighborhood,
             continue
 
         orig_label_1 = merged_labels[d_1, w_1, h_1]
-        orig_label_2 = merged_labels[int(d_2), int(w_2), int(h_2)]
+        orig_label_2 = merged_labels[d_2, w_2, h_2]
 
         region_label_1 = chase(merged_labels.ravel(), orig_label_1)
         region_label_2 = chase(merged_labels.ravel(), orig_label_2)
@@ -78,20 +70,17 @@ def build_tree(labels, edge_weights, neighborhood,
         edge_tree[order_index, 1] = region_parents[region_label_1]
         edge_tree[order_index, 2] = region_parents[region_label_2]
 
-        # merge regions
+        # choose one of the two labels to be the new label
         new_label = min(region_label_1, region_label_2)
-        merge(merged_labels.ravel(), orig_label_1, new_label)
-        merge(merged_labels.ravel(), orig_label_2, new_label)
 
         # store parent edge of region by location in tree
         region_parents[new_label] = order_index
 
+        merged_labels[d_1, w_1, h_1] = new_label
+        merged_labels[d_2, w_2, h_2] = new_label
+
         order_index += 1
     return edge_tree
-
-
-########################################################################################
-# compute pairs (instead of costs) methods
 
 
 def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
@@ -117,7 +106,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         ########################################################################
         # Child 1
         if stackentry["child_1_status"] == 0:
-
             if child_1 == -1:
                 stackentry["region_counts_1"] = {labels[d_1, w_1, h_1]: 1}
                 stackentry["child_1_status"] = 2
