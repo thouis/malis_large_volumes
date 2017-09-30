@@ -1,8 +1,6 @@
 import numpy as np
 import pyximport
 pyximport.install(setup_args={'include_dirs': [np.get_include()]})
-import sys
-sys.setrecursionlimit(8000)
 
 
 def chase(id_table, idx):
@@ -31,7 +29,6 @@ def build_tree(labels, edge_weights, neighborhood,
             If a child index is -1, it's a pixel, not an edge, and can be
                 inferred from the linear edge index.
             Tree is terminated by linear_edge_index == -1
-
     '''
 
     D, W, H = labels.shape
@@ -93,9 +90,9 @@ def build_tree(labels, edge_weights, neighborhood,
     return edge_tree
 
 
-
 ########################################################################################
 # compute pairs (instead of costs) methods
+
 
 def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
 
@@ -117,7 +114,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         linear_edge_index, child_1, child_2 = edge_tree[stackentry["edge_tree_idx"], ...]
         k, d_1, w_1, h_1 = np.unravel_index(linear_edge_index, edge_weights.shape)
 
-
         ########################################################################
         # Child 1
         if stackentry["child_1_status"] == 0:
@@ -136,7 +132,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         elif stackentry["child_1_status"] == 1:
             stackentry["region_counts_1"] = return_dict
             stackentry["child_1_status"] = 2
-
 
         ########################################################################
         # Child 2
@@ -157,8 +152,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         elif stackentry["child_2_status"] == 1:
             region_counts_2 = return_dict
 
-
-
         # syntactic sugar for below
         region_counts_1 = stackentry["region_counts_1"]
 
@@ -168,11 +161,12 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         return_dict = {}
         for key1, counts1 in region_counts_1.items():
             for key2, counts2 in region_counts_2.items():
-                if key1 == key2:
+                if key1 == key2 \
+                   and not key1 == 0 \
+                   and not key2 == 0:
                     pos_pairs[k, d_1, w_1, h_1] += counts1 * counts2
                 else:
                     neg_pairs[k, d_1, w_1, h_1] += counts1 * counts2
-
 
         for key1, counts1 in region_counts_1.items():
             return_dict[key1] = counts1
@@ -183,56 +177,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
             else:
                 return_dict[key2] = counts2
         stack.pop()
-
-        
-
-
-def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
-
-    linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
-    k, d_1, w_1, h_1 = np.unravel_index(linear_edge_index, edge_weights.shape)
-    assert linear_edge_index != -1  # also marks visited nodes
-    if child_1 == -1:
-        # first child is a voxel.  Compute its location
-        region_counts_1 = {labels[d_1, w_1, h_1]: 1}
-    else:
-        # recurse first child
-        region_counts_1 = compute_pairs_recursive(labels, edge_weights, neighborhood,
-                                                 edge_tree, child_1, pos_pairs, neg_pairs)
-
-    if child_2 == -1:
-        # second child is a voxel.  Compute its location via neighborhood.
-        offset = neighborhood[k, ...]
-        d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
-        region_counts_2 = {labels[d_2, w_2, h_2]: 1}
-    else:
-        # recurse second child
-        region_counts_2 = compute_pairs_recursive(labels, edge_weights, neighborhood,
-                                                 edge_tree, child_2, pos_pairs, neg_pairs)
-
-    # mark this edge as done so recursion doesn't hit it again
-    edge_tree[edge_tree_idx, 0] = -1
-
-    return_dict = {}
-    for key1, counts1 in region_counts_1.items():
-        for key2, counts2 in region_counts_2.items():
-            if key1 == key2 \
-            and not key1 == 0 \
-            and not key2 == 0:
-                pos_pairs[k, d_1, w_1, h_1] += counts1 * counts2
-            else:
-                neg_pairs[k, d_1, w_1, h_1] += counts1 * counts2
-
-    for key1, counts1 in region_counts_1.items():
-        return_dict[key1] = counts1
-
-    for key2, counts2 in region_counts_2.items():
-        if key2 in return_dict.keys():
-            return_dict[key2] += counts2
-        else:
-            return_dict[key2] = counts2
-
-    return return_dict
 
 
 def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree,

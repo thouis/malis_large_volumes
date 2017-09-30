@@ -13,7 +13,7 @@ neighborhood = np.array([[-1, 0, 0],
 
 def test(pairs_module, get_pairs):
     """
-    pairs_module: 
+    pairs_module:
         the pairs module from malis_large_volumes, for which the
         functions should be tested (can be python or cython version)
     get_pairs_func:
