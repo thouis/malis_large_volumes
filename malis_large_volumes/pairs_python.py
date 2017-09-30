@@ -20,7 +20,8 @@ def merge(id_table, idx_from, idx_to):
         merge(id_table, old, idx_to)
 
 
-def build_tree(labels, edge_weights, neighborhood):
+def build_tree(labels, edge_weights, neighborhood,
+               stochastic_malis_param=None):
     '''find tree of edges linking regions.
         labels = (D, W, H) integer label volume.  0s ignored
         edge_weights = (D, W, H, K) floating point values.
@@ -47,17 +48,19 @@ def build_tree(labels, edge_weights, neighborhood):
     region_parents = - np.ones_like(labels, dtype=np.int32).ravel()
 
     # edge tree
-    edge_tree = - np.ones((D * W * H, 3), dtype=np.int32)
+    edge_tree = - np.ones((labels.size, 3), dtype=np.int32)
 
     ordered_indices = ew_flat.argsort()[::-1].astype(np.uint32)
 #    ordered_indices = qargsort32(ew_flat)[::-1]
     order_index = 0
 
     for edge_idx in ordered_indices:
-        # the size of ordered_indices is k times bigger than the amount of 
+        # the size of ordered_indices is k times bigger than the amount of
         # voxels, but every voxel can be merged by only exactly one edge,
         # so this loop will run exactly n_voxels times.
-        d_1, w_1, h_1, k = np.unravel_index(edge_idx, edge_weights.shape)
+
+        # get the positions of the two voxels linked by current edge
+        k, d_1, w_1, h_1 = np.unravel_index(edge_idx, edge_weights.shape)
         offset = neighborhood[k, ...]
         d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))
 
@@ -88,8 +91,6 @@ def build_tree(labels, edge_weights, neighborhood):
 
         # store parent edge of region by location in tree
         region_parents[new_label] = order_index
-        
-
 
         order_index += 1
     return edge_tree
@@ -192,7 +193,7 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
 def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
 
     linear_edge_index, child_1, child_2 = edge_tree[edge_tree_idx, ...]
-    d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
+    k, d_1, w_1, h_1 = np.unravel_index(linear_edge_index, edge_weights.shape)
     assert linear_edge_index != -1  # also marks visited nodes
     if child_1 == -1:
         # first child is a voxel.  Compute its location
@@ -236,7 +237,8 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
     return return_dict
 
 
-def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree):
+def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree,
+        count_method=None):
     pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
     neg_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
 
