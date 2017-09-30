@@ -78,20 +78,20 @@ def test(pairs_module, get_pairs):
         assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
         assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
         print("Test 3 finished, no error\n")
-    except:
+    except Exception as e:
         print("Test 3 FAILED!")
+        print("Exception:\n"+ str(e))
         print("Tree-malis was not the same as Turaga-malis.")
         print("However, this happens sometimes and I assume it's due to differences in " + \
               "sorting the edges. Try running the tests again and see if it fails again.\n")
 
     #######################################################
 
-
     #######################################################
     # TEST 4
     print("Starting test 4")
     # In this test we're testing the wrapper that will be used by external users
-    pos_pairs_from_get_pairs, neg_pairs_from_get_pairs = get_pairs(\
+    pos_pairs_from_get_pairs, neg_pairs_from_get_pairs = get_pairs(
             labels, weights, neighborhood, keep_objs_per_edge=20)
 
     assert np.all(pos_pairs == pos_pairs_from_get_pairs), "pos pairs was not same as pos pairs from get_pairs"
