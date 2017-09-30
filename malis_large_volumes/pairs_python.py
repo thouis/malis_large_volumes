@@ -10,16 +10,29 @@ def chase(id_table, idx):
 def build_tree(labels, edge_weights, neighborhood,
                stochastic_malis_param=None):
     '''find tree of edges linking regions.
-        labels = (D, W, H) integer label volume.  0s ignored
-        edge_weights = (D, W, H, K) floating point values.
-                  Kth entry corresponds to Kth offset in neighborhood.
-        neighborhood = (K, 3) offsets from pixel to linked pixel.
 
-        returns: edge tree (D * W * H, 3) (int32)
-            array of: (linear edge index, child 1 index in edge tree, child 2 index in edge tree)
-            If a child index is -1, it's a pixel, not an edge, and can be
-                inferred from the linear edge index.
-            Tree is terminated by linear_edge_index == -1
+    params:
+        labels: (D, W, H) integer
+            labels.
+        edge_weights: (K, D, W, H) float
+            Kth entry corresponds to Kth offset in neighborhood
+        neighborhood: (K, 3)
+            offsets from pixel to linked pixel
+        stochastic_malis_parameter: int
+            only for compatibility reasons, does not have an effect
+            (only has an effect in cython version)
+
+    returns:
+        edge tree (3, D * W * H) (int32)
+            each row corresponds to one edge
+
+            first column
+                index into the flattened edge array,
+                indicates which edge the current row corresponds to 
+            second, third column
+                are indices into edge_tree itself (not flattened edge array!)
+                indicate the rows in edge_tree that are the parents of the two sub regions
+                -1 means the sub-region is just the voxel that the edge connects
     '''
 
     D, W, H = labels.shape

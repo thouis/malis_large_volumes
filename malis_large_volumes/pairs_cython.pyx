@@ -51,6 +51,10 @@ def scramble_sort(array, stochastic_malis_param):
     This function scrambles a pre-sorted array. The
     stochastic malis_param controls how much it gets scrambled,
     higher means more scrambled
+
+    params:
+        stochastic_malis_parameter: int
+            roughly determines by how many places rows are shuffled
     """
     if stochastic_malis_param == 0:
         return array
@@ -78,9 +82,11 @@ def build_tree(labels, edge_weights, neighborhood,
         labels: (D, W, H) integer
             labels.
         edge_weights: (K, D, W, H) float
-            Kth entry corresponds to Kth offset in neighborhood.
+            Kth entry corresponds to Kth offset in neighborhood
         neighborhood: (K, 3)
-            offsets from pixel to linked pixel.
+            offsets from pixel to linked pixel
+        stochastic_malis_parameter: int
+            roughly determines by how many places rows are shuffled
 
     returns:
         edge tree (3, D * W * H) (int32)
