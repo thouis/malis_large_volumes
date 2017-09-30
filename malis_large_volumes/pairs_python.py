@@ -1,5 +1,4 @@
 import numpy as np
-import pyximport
 
 
 def chase(id_table, idx):
@@ -73,12 +72,20 @@ def build_tree(labels, edge_weights, neighborhood,
         # choose one of the two labels to be the new label
         new_label = min(region_label_1, region_label_2)
 
+        # one of these two is already the new label, but for simplicity sake
+        # we assign the new label to both
+        merged_labels.ravel()[region_label_1] = new_label
+        merged_labels.ravel()[region_label_2] = new_label
+
         # store parent edge of region by location in tree
-        region_parents[new_label] = order_index
+        region_parents[region_label_1] = order_index
+        region_parents[region_label_2] = order_index
 
-        merged_labels[d_1, w_1, h_1] = new_label
-        merged_labels[d_2, w_2, h_2] = new_label
-
+        # increase index of next to be assigned element in edge_tree
+        # this must not be incremented earlier, because lots of edges
+        # that link to voxels that already belong to the same region
+        # will ultimately be ignored and hence order_indedx shouldn't
+        # be increased
         order_index += 1
     return edge_tree
 
@@ -124,7 +131,6 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         ########################################################################
         # Child 2
         if stackentry["child_2_status"] == 0:
-
             if child_2 == -1:
                 offset = neighborhood[k, ...]
                 d_2, w_2, h_2 = (o + d for o, d in zip(offset, (d_1, w_1, h_1)))

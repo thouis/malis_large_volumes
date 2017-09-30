@@ -179,7 +179,7 @@ def build_tree(labels, edge_weights, neighborhood,
             edge_tree[order_index, 1] = region_parents[region_label_1]
             edge_tree[order_index, 2] = region_parents[region_label_2]
 
-            # merge regions
+            # choose one of the two labels to be the new label
             new_label = min(region_label_1, region_label_2)
 
             # one of these two is already the new label, but for simplicity sake
@@ -188,10 +188,11 @@ def build_tree(labels, edge_weights, neighborhood,
             merged_labels_raveled[region_label_2] = new_label
 
             # store parent edge of region by location in tree
-            region_parents[new_label] = order_index
+            region_parents[region_label_1] = order_index
+            region_parents[region_label_2] = order_index
 
             # increase index of next to be assigned element in edge_tree
-            # this can't be incremented earlier, because lots of edges
+            # this must not be incremented earlier, because lots of edges
             # that link to voxels that already belong to the same region
             # will ultimately be ignored and hence order_indedx shouldn't
             # be increased
