@@ -1,8 +1,6 @@
 import numpy as np
-import pdb
 import pyximport
 pyximport.install(setup_args={'include_dirs': [np.get_include()]})
-#from .argsort_int32 import qargsort32
 import sys
 sys.setrecursionlimit(8000)
 
@@ -51,7 +49,6 @@ def build_tree(labels, edge_weights, neighborhood,
     edge_tree = - np.ones((labels.size, 3), dtype=np.int32)
 
     ordered_indices = ew_flat.argsort()[::-1].astype(np.uint32)
-#    ordered_indices = qargsort32(ew_flat)[::-1]
     order_index = 0
 
     for edge_idx in ordered_indices:
@@ -118,7 +115,7 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
     while len(stack) > 0:
         stackentry = stack[-1]
         linear_edge_index, child_1, child_2 = edge_tree[stackentry["edge_tree_idx"], ...]
-        d_1, w_1, h_1, k = np.unravel_index(linear_edge_index, edge_weights.shape)
+        k, d_1, w_1, h_1 = np.unravel_index(linear_edge_index, edge_weights.shape)
 
 
         ########################################################################
@@ -172,9 +169,9 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         for key1, counts1 in region_counts_1.items():
             for key2, counts2 in region_counts_2.items():
                 if key1 == key2:
-                    pos_pairs[d_1, w_1, h_1, k] += counts1 * counts2
+                    pos_pairs[k, d_1, w_1, h_1] += counts1 * counts2
                 else:
-                    neg_pairs[d_1, w_1, h_1, k] += counts1 * counts2
+                    neg_pairs[k, d_1, w_1, h_1] += counts1 * counts2
 
 
         for key1, counts1 in region_counts_1.items():
@@ -220,10 +217,9 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
     for key1, counts1 in region_counts_1.items():
         for key2, counts2 in region_counts_2.items():
             if key1 == key2:
-                pos_pairs[d_1, w_1, h_1, k] += counts1 * counts2
+                pos_pairs[k, d_1, w_1, h_1] += counts1 * counts2
             else:
-                neg_pairs[d_1, w_1, h_1, k] += counts1 * counts2
-
+                neg_pairs[k, d_1, w_1, h_1] += counts1 * counts2
 
     for key1, counts1 in region_counts_1.items():
         return_dict[key1] = counts1
@@ -238,18 +234,15 @@ def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_
 
 
 def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree,
-        count_method=None):
-    pos_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
-    neg_pairs = np.zeros(labels.shape + (neighborhood.shape[0],), dtype=np.uint32)
-
-    # save these for later.
-    linear_edge_indices = edge_tree[:, 0].copy()
+                            count_method=None, keep_objs_per_edge=None):
+    pos_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint32)
+    neg_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint32)
 
     # process tree from root (later in array) to leaves (earlier)
     for idx in range(edge_tree.shape[0] - 1, 0, -1):
         if edge_tree[idx, 0] == -1:
             continue
         compute_pairs_iterative(labels, edge_weights, neighborhood,
-                               edge_tree, idx, pos_pairs, neg_pairs)
+                                edge_tree, idx, pos_pairs, neg_pairs)
 
     return pos_pairs, neg_pairs
