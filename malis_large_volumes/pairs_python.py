@@ -23,7 +23,7 @@ def build_tree(labels, edge_weights, neighborhood,
             (only has an effect in cython version)
 
     returns:
-        edge tree (3, D * W * H) (int32)
+        edge tree (D * W * H, 3) (int32)
             each row corresponds to one edge
 
             first column
