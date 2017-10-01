@@ -53,7 +53,7 @@ for i, depth_size in enumerate(depth_size_range):
     pos_pairs, neg_pairs = pairs_cython.compute_pairs_with_tree(labels, weights,
                                                       neighborhood,
                                                       edge_tree_cython.copy(),
-                                                      keep_objs_per_edge=20)
+                                                      keep_objs_per_edge=1000)
     end_time = time.time()
     print("Pair computation time: " + str(end_time - start_time))
 
