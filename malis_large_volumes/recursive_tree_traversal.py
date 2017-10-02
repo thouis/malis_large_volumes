@@ -1,3 +1,12 @@
+"""
+This function is not being used because the trees we need to traverse are so deep
+that we need to go way beyond pythons maximum stack depth. The stack depth of
+python is configurable but above some limit python starts behaving weirdly
+and failing in unexpected ways. So this function is just for reference.
+"""
+
+import numpy as np
+
 
 def compute_pairs_recursive(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
 
