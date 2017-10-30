@@ -32,15 +32,16 @@ def test(pairs_module, get_pairs):
                                         stochastic_malis_param=0)
     pos_pairs, neg_pairs = pairs_module.compute_pairs_with_tree(
                                labels, weights,
-                               neighborhood, edge_tree, count_method=0)
+                               neighborhood, edge_tree, count_method=0,
+                               ignore_background=True)
     assert neg_pairs[2, 0, 0, 3] == 9, "neg pairs result was incorrect"
 
     # compare with turagas implementation
     pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(
                                    weights,
                                    labels.astype(np.int64),
-                                   ignore_background=False)
-    #pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=False)
+                                   ignore_background=True)
+    #pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=True)
     assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
     assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
     print("Test 1 finished, no error\n")
@@ -56,13 +57,14 @@ def test(pairs_module, get_pairs):
     weights[0, 2, 1, 1] = .4  # this is the maximin edge between the two objects
 
     edge_tree = pairs_module.build_tree(labels, weights, neighborhood)
-    pos_pairs, neg_pairs = pairs_module.compute_pairs_with_tree(labels, weights, neighborhood, edge_tree)
+    pos_pairs, neg_pairs = pairs_module.compute_pairs_with_tree(labels, weights, neighborhood, edge_tree,
+                                                                ignore_background=True)
     assert neg_pairs[0, 2, 1, 1] == (2 * 3 * 3) ** 2
 
     # compare with turagas implementation
     pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights,
                                                                      labels.astype(np.int64),
-                                                                     ignore_background=False)
+                                                                     ignore_background=True)
     assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
     assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
     print("Test 2 finished, no error\n")
@@ -76,12 +78,13 @@ def test(pairs_module, get_pairs):
 
     edge_tree = pairs_module.build_tree(labels, weights, neighborhood)
     pos_pairs, neg_pairs = pairs_module.compute_pairs_with_tree(labels, weights,
-                              neighborhood, edge_tree, keep_objs_per_edge=20)
+                              neighborhood, edge_tree, keep_objs_per_edge=20,
+                              ignore_background=True)
 
     # compare with turagas implementation
     pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights,
                                                                      labels.astype(np.int64),
-                                                                     ignore_background=False)
+                                                                     ignore_background=True)
     try:
         assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
         assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"

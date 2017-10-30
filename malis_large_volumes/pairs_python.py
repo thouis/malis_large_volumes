@@ -28,7 +28,7 @@ def build_tree(labels, edge_weights, neighborhood,
 
             first column
                 index into the flattened edge array,
-                indicates which edge the current row corresponds to 
+                indicates which edge the current row corresponds to
             second, third column
                 are indices into edge_tree itself (not flattened edge array!)
                 indicate the rows in edge_tree that are the parents of the two sub regions
@@ -103,7 +103,8 @@ def build_tree(labels, edge_weights, neighborhood,
     return edge_tree
 
 
-def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx, pos_pairs, neg_pairs):
+def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_tree_idx,
+                            pos_pairs, neg_pairs, ignore_background=True):
 
     stack = []
     stackentry_template = {
@@ -168,12 +169,13 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
         return_dict = {}
         for key1, counts1 in region_counts_1.items():
             for key2, counts2 in region_counts_2.items():
-                if key1 == key2 \
-                   and not key1 == 0 \
-                   and not key2 == 0:
+                if key1 == key2 and not key1 == 0 and not key2 == 0:
                     pos_pairs[k, d_1, w_1, h_1] += counts1 * counts2
                 else:
-                    neg_pairs[k, d_1, w_1, h_1] += counts1 * counts2
+                    if ignore_background and (key1 == 0 or key2 == 0):
+                        pass
+                    else:
+                        neg_pairs[k, d_1, w_1, h_1] += counts1 * counts2
 
         for key1, counts1 in region_counts_1.items():
             return_dict[key1] = counts1
@@ -187,7 +189,8 @@ def compute_pairs_iterative(labels, edge_weights, neighborhood, edge_tree, edge_
 
 
 def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree,
-                            count_method=None, keep_objs_per_edge=None):
+                            count_method=None, keep_objs_per_edge=None,
+                            ignore_background=True):
     pos_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint32)
     neg_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint32)
 
@@ -196,6 +199,7 @@ def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree,
         if edge_tree[idx, 0] == -1:
             continue
         compute_pairs_iterative(labels, edge_weights, neighborhood,
-                                edge_tree, idx, pos_pairs, neg_pairs)
+                                edge_tree, idx, pos_pairs, neg_pairs,
+                                ignore_background=ignore_background)
 
     return pos_pairs, neg_pairs
