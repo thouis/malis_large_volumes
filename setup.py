@@ -10,7 +10,7 @@ ext_modules = [setuptools.extension.Extension("malis_large_volumes.pairs_cython"
                include_dirs=[np.get_include()])]
 
 setuptools.setup(name="malis_large_volumes",
-                 version="0.0.1",
+                 version="0.0.2",
                  cmdclass={'build_ext': build_ext},
                  ext_modules=ext_modules,
                  packages=["malis_large_volumes"])

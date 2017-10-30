@@ -4,7 +4,8 @@ from . import pairs_cython
 
 
 def get_pairs(labels, edge_weights, neighborhood=None,
-      keep_objs_per_edge=20, stochastic_malis_param=0, count_method=0):
+              keep_objs_per_edge=20, stochastic_malis_param=0, count_method=0,
+              ignore_background=True):
     """
     This function simply combines the build_tree and compute_pairs functions
     pos_pairs: numpy array of shape (3,) + labels.shape
@@ -20,17 +21,17 @@ def get_pairs(labels, edge_weights, neighborhood=None,
     edge_tree = pairs_cython.build_tree(labels, edge_weights, neighborhood,
                                         stochastic_malis_param=stochastic_malis_param)
     return pairs_cython.compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree,
-        keep_objs_per_edge=keep_objs_per_edge, count_method=count_method)
+                                                keep_objs_per_edge=keep_objs_per_edge,
+                                                count_method=count_method)
 
 
-""" 
-You should only use this function if you can't install cython for some reason
-"""
 def get_pairs_python(labels, edge_weights, neighborhood=None,
-                     keep_objs_per_edge=20):
+                     keep_objs_per_edge=20, stochastic_malis_param=0, count_method=0,
+                     ignore_background=True):
     """
     This function simply combines the build_tree and compute_pairs functions
-    
+    You should only use this function if you can't install cython for some reason
+
     returns:
     pos_pairs: numpy array of shape (3,) + labels.shape
                matching pairs
