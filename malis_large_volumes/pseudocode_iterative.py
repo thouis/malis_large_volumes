@@ -15,6 +15,11 @@ def recursive_function(root_edge, counts_array):
     stackentry["edge_tree_idx"] = edge_tree_idx
     stack.append(stackentry)
 
+    # Child statuses:
+    # 0: never handled
+    # 1: has just been recursed, result in  return_dict
+    # 2: recursion already done, result in region_counts
+
     while len(stack) > 0:
 
         # get latest stackentry
