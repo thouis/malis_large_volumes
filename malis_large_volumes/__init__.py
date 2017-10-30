@@ -25,6 +25,10 @@ def get_pairs(labels, edge_weights, neighborhood=None,
                                                 count_method=count_method)
 
 
+# create alias (for consistencty in test_suite only)
+get_pairs_cython = get_pairs
+
+
 def get_pairs_python(labels, edge_weights, neighborhood=None,
                      keep_objs_per_edge=20, stochastic_malis_param=0, count_method=0,
                      ignore_background=True):

@@ -51,6 +51,10 @@ def scramble_sort(array, stochastic_malis_param):
     This function scrambles a pre-sorted array. The
     stochastic malis_param controls how much it gets scrambled,
     higher means more scrambled
+
+    params:
+        stochastic_malis_parameter: int
+            roughly determines by how many places rows are shuffled
     """
     if stochastic_malis_param == 0:
         return array
@@ -73,17 +77,28 @@ def scramble_sort(array, stochastic_malis_param):
 def build_tree(labels, edge_weights, neighborhood,
                stochastic_malis_param=0):
     '''find tree of edges linking regions.
-        labels = (D, W, H) integer label volume.  0s ignored
-        edge_weights = (K, D, W, H) floating point values.
-                  Kth entry corresponds to Kth offset in neighborhood.
-        neighborhood = (K, 3) offsets from pixel to linked pixel.
 
-        returns: edge tree (3, D * W * H) (int32)
-            array of: (linear edge index, child 1 index in edge tree, child 2 index in edge tree)
-            If a child index is -1, it's a pixel, not an edge, and can be
-                inferred from the linear edge index.
-            Tree is terminated by linear_edge_index == -1
+    params:
+        labels: (D, W, H) integer
+            labels.
+        edge_weights: (K, D, W, H) float
+            Kth entry corresponds to Kth offset in neighborhood
+        neighborhood: (K, 3)
+            offsets from pixel to linked pixel
+        stochastic_malis_parameter: int
+            roughly determines by how many places rows are shuffled
 
+    returns:
+        edge tree (D * W * H, 3) (int32)
+            each row corresponds to one edge
+
+            first column
+                index into the flattened edge array,
+                indicates which edge the current row corresponds to 
+            second, third column
+                are indices into edge_tree itself (not flattened edge array!)
+                indicate the rows in edge_tree that are the parents of the two sub regions
+                -1 means the sub-region is just the voxel that the edge connects
     '''
     cdef int [:, :] neighborhood_view = neighborhood
     cdef int D, W, H
@@ -170,18 +185,20 @@ def build_tree(labels, edge_weights, neighborhood,
             edge_tree[order_index, 1] = region_parents[region_label_1]
             edge_tree[order_index, 2] = region_parents[region_label_2]
 
-            # merge regions
+            # choose one of the two labels to be the new label
             new_label = min(region_label_1, region_label_2)
-            if new_label != region_label_1:
-                merged_labels_raveled[region_label_1] = new_label
-            else:
-                merged_labels_raveled[region_label_2] = new_label
+
+            # one of these two is already the new label, but for simplicity sake
+            # we assign the new label to both
+            merged_labels_raveled[region_label_1] = new_label
+            merged_labels_raveled[region_label_2] = new_label
 
             # store parent edge of region by location in tree
-            region_parents[new_label] = order_index
+            region_parents[region_label_1] = order_index
+            region_parents[region_label_2] = order_index
 
             # increase index of next to be assigned element in edge_tree
-            # this can't be incremented earlier, because lots of edges
+            # this must not be incremented earlier, because lots of edges
             # that link to voxels that already belong to the same region
             # will ultimately be ignored and hence order_indedx shouldn't
             # be increased
@@ -196,9 +213,10 @@ cdef struct stackelement:
     int child_2_status
     unordered_map[unsigned int, unsigned long]* region_counts_1
 
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef void compute_pairs_iterative(  \
+cdef void compute_pairs_iterative(
                 unsigned int[:, :, :] labels,
                 int[::1] ew_shape,
                 int[:, :] neighborhood, 
