@@ -5,7 +5,6 @@ import numpy as np
 
 class Malis:
     def __init__(self,
-                 keep_objs_per_edge=20,
                  margin=.2,
                  pos_loss_weight=0.5):
         self.margin = margin
