@@ -346,6 +346,10 @@ cdef void compute_pairs_iterative(
         # delete smallest object counts in return dict until it has keep_objs_per_edge counts left
         while return_dict.size() > keep_objs_per_edge:
             # find smallest object count
+            #   first, set the key of the smallest count and the smallest count itself to those
+            #   values of the first item in return_dict
+            #   then loop over the rest of the keys and exchange the key and smallest count with
+            #   any that has a lower count
             key_smallest_count = dereference(return_dict.begin()).first
             smallest_count = dereference(return_dict.begin()).second
             for item in dereference(return_dict):
