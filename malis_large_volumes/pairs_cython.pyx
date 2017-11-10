@@ -8,7 +8,7 @@ import sys
 from libcpp.unordered_map cimport unordered_map
 from libcpp.stack cimport stack
 from libc.stdlib cimport malloc, free, realloc
-from libc.math cimport log
+from libc.math cimport log, sqrt
 from cython.operator cimport dereference
 
 
@@ -225,7 +225,8 @@ cdef void compute_pairs_iterative(
                 unsigned long[:, :, :, :] pos_pairs, 
                 unsigned long[:, :, :, :] neg_pairs,
                 int keep_objs_per_edge,
-                int count_method) nogil:
+                int count_method,
+                int ignore_background=True) nogil:
 
     cdef int linear_edge_index, child_1, child_2
     cdef int d_1, w_1, h_1, k, d_2, w_2, h_2
@@ -315,16 +316,21 @@ cdef void compute_pairs_iterative(
                 if count_method == 0:
                     paircount = item1.second * item2.second
                 elif count_method == 1:
-                    paircount = item1.second * <int>log(item2.second) + \
-                                <int>log(item1.second) * item2.second
+                    paircount = <int> (sqrt(item1.second) * sqrt(item2.second))
+                elif count_method == 2:
+                    # making sure that the paircount is at least 1:
+                    paircount = <int> ((log(item1.second + 1) * log(item2.second + 1)) + 1)
                 if item1.first == item2.first and \
                     not item1.first == 0 and \
                     not item2.first == 0:
                     # the labels were the same -> positive count
                     pos_pairs[k, d_1, w_1, h_1] += paircount
                 else:
-                    # the labels were different or they were 0 (background)
-                    neg_pairs[k, d_1, w_1, h_1] += paircount
+                    if ignore_background and (item1.first == 0 or item2.first == 0):
+                        pass
+                    else:
+                        # the labels were different or they were 0 (background)
+                        neg_pairs[k, d_1, w_1, h_1] += paircount
 
         #########################################################################
         # Prepare return dict that will be used in the next iteration of the loop
@@ -369,7 +375,7 @@ cdef void compute_pairs_iterative(
 
 
 def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree, keep_objs_per_edge=10,
-                            count_method=0):
+                            count_method=0, ignore_background=True):
     cdef unsigned int [:, :, :] labels_view = labels
     cdef int [:, :] neighborhood_view = neighborhood
     cdef int [:, :] edge_tree_view = edge_tree
@@ -378,6 +384,7 @@ def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree, keep_
     cdef unsigned long [:, :, :, :] neg_pairs = np.zeros((neighborhood.shape[0],) + labels.shape, dtype=np.uint64)
     cdef int keep_objs = keep_objs_per_edge
     cdef int count_method_int = count_method
+    cdef int ignore_background_ctype = ignore_background
 
     # process tree from root (later in array) to leaves (earlier)
     cdef int idx
@@ -386,5 +393,6 @@ def compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree, keep_
             continue
         with nogil:
             compute_pairs_iterative(labels_view, ew_shape, neighborhood_view,
-                edge_tree_view, idx, pos_pairs, neg_pairs, keep_objs, count_method_int)
+                edge_tree_view, idx, pos_pairs, neg_pairs, keep_objs, count_method_int,
+                ignore_background=ignore_background_ctype)
     return np.array(pos_pairs), np.array(neg_pairs)
