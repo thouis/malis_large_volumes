@@ -22,7 +22,8 @@ def get_pairs(labels, edge_weights, neighborhood=None,
                                         stochastic_malis_param=stochastic_malis_param)
     return pairs_cython.compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree,
                                                 keep_objs_per_edge=keep_objs_per_edge,
-                                                count_method=count_method)
+                                                count_method=count_method,
+                                                ignore_background=ignore_background)
 
 
 # create alias (for consistencty in test_suite only)
@@ -49,4 +50,5 @@ def get_pairs_python(labels, edge_weights, neighborhood=None,
                                  [0, 0, -1]], dtype=np.int32)
     edge_tree = pairs_python.build_tree(labels, edge_weights, neighborhood)
     return pairs_python.compute_pairs_with_tree(labels, edge_weights, neighborhood, edge_tree,
-                                                keep_objs_per_edge=keep_objs_per_edge)
+                                                keep_objs_per_edge=keep_objs_per_edge,
+                                                ignore_background=ignore_background)

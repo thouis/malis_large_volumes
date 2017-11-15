@@ -10,6 +10,7 @@ neighborhood = np.array([[-1, 0, 0],
                          [0, -1, 0],
                          [0, 0, -1]], dtype=np.int32)
 
+ignore_background = False
 
 def test(pairs_module, get_pairs):
     """
@@ -41,7 +42,6 @@ def test(pairs_module, get_pairs):
                                    weights,
                                    labels.astype(np.int64),
                                    ignore_background=True)
-    #pos_pairs_2, neg_pairs_2 = malis_turaga(weights, labels, ignore_background=True)
     assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
     assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
     print("Test 1 finished, no error\n")
@@ -79,12 +79,12 @@ def test(pairs_module, get_pairs):
     edge_tree = pairs_module.build_tree(labels, weights, neighborhood)
     pos_pairs, neg_pairs = pairs_module.compute_pairs_with_tree(labels, weights,
                               neighborhood, edge_tree, keep_objs_per_edge=20,
-                              ignore_background=True)
+                              ignore_background=ignore_background)
 
     # compare with turagas implementation
     pos_pairs_2, neg_pairs_2 = malis_pairs_wrapper_turaga.get_counts(weights,
                                                                      labels.astype(np.int64),
-                                                                     ignore_background=True)
+                                                                     ignore_background=ignore_background)
     try:
         assert np.all(pos_pairs == pos_pairs_2), "pos pairs was not same as turaga implementation"
         assert np.all(neg_pairs == neg_pairs_2), "neg pairs was not same as turaga implementation"
@@ -103,7 +103,8 @@ def test(pairs_module, get_pairs):
     print("Starting test 4")
     # In this test we're testing the wrapper that will be used by external users
     pos_pairs_from_get_pairs, neg_pairs_from_get_pairs = get_pairs(
-            labels, weights, neighborhood, keep_objs_per_edge=20)
+            labels, weights, neighborhood, keep_objs_per_edge=20,
+            ignore_background=ignore_background)
 
     assert np.all(pos_pairs == pos_pairs_from_get_pairs), "pos pairs was not same as pos pairs from get_pairs"
     assert np.all(neg_pairs == neg_pairs_from_get_pairs), "neg pairs was not same as neg pairs from get_pairs"
