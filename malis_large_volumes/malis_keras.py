@@ -2,8 +2,6 @@ import keras.backend as K
 import tensorflow as tf
 import numpy as np
 
-from .wrappers import get_pairs
-
 
 class Malis:
     def __init__(self,
@@ -35,8 +33,8 @@ class Malis:
         edges_not_in_lower_margin = tf.where(pred > self.margin, ones_helpervar, zeros_helpervar)
         loss_mask = tf.where(pos_pairs > neg_pairs, edges_not_in_upper_margin, edges_not_in_lower_margin)
 
-        pos_loss = (1 - pred)**2 * pos_pairs * loss_mask * self.pos_loss_weight
-        neg_loss = pred**2 * neg_pairs * loss_mask * self.neg_loss_weight
+        pos_loss = (1 - pred - self.margin)**2 * pos_pairs * loss_mask * self.pos_loss_weight
+        neg_loss = (pred - self.margin)**2 * neg_pairs * loss_mask * self.neg_loss_weight
         # get the total loss at each element
         elemwise_total_loss = pos_loss + neg_loss
         malis_loss = K.sum(elemwise_total_loss, axis=(1, 2, 3, 4))
@@ -72,8 +70,8 @@ class Malis:
         edges_not_in_lower_margin = np.where(pred > self.margin, ones_helpervar, zeros_helpervar)
         loss_mask = np.where(pos_pairs > neg_pairs, edges_not_in_upper_margin, edges_not_in_lower_margin)
 
-        pos_loss = (1 - pred)**2 * pos_pairs * loss_mask * self.pos_loss_weight
-        neg_loss = pred**2 * neg_pairs * loss_mask * self.neg_loss_weight
+        pos_loss = (1 - pred - self.margin)**2 * pos_pairs * loss_mask * self.pos_loss_weight
+        neg_loss = (pred - self.margin)**2 * neg_pairs * loss_mask * self.neg_loss_weight
         # get the total loss at each element
         elemwise_total_loss = pos_loss + neg_loss
         malis_loss = np.sum(elemwise_total_loss, axis=(1, 2, 3, 4)) * 2
