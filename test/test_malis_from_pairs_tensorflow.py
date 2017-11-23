@@ -8,9 +8,17 @@ na = np.newaxis
 #######################################################
 # TEST 1
 print("Starting test 1")
+# the following variables are named the same as the ones in
+# Turaga et al. 2009 (Malis paper)
+x = 0.4
+x_hat = 0.0
+m = 0.3
+pos_loss_weight = 0.5
+neg_loss_weight = 0.5
+
 labels = np.array([[[1, 1, 1, 2, 2, 2]]], dtype=np.uint32)
 affinities = np.zeros(shape=(3,) + labels.shape)
-affinities[2, :, :, :] = np.array([[[.7, .7, .7, .3, .7, .7]]], dtype=np.float64)
+affinities[2, :, :, :] = np.array([[[.6, .6, .6, x, .6, .6]]], dtype=np.float64)
 affinities += np.random.normal(size=affinities.shape, scale=.0001)
 
 pos_pairs, neg_pairs = malis_large_volumes.get_pairs(labels, affinities,
@@ -37,13 +45,15 @@ python_loss, _, _ = malis_obj.pairs_to_loss_python(all_pairs, affinities)
 python_loss = python_loss[0]
 
 # analytically expected loss:
-analytic_loss = (3 + 3) * (1 - 0.7) ** 2 + 9 * (0.3 ** 2)
-analytic_gradient = 2 * 9 * 0.3
+pos_loss = pos_loss_weight * ((3 + 3) * (1 - 0.6) ** 2)
+neg_loss = pos_loss_weight * ((3 * 3) * (0 + x) ** 2)
+analytic_loss = (pos_loss + neg_loss) * 2
+analytic_gradient = 2 * 9 * 0.4
 
 print("The keras/tensorflow computed loss is: " + str(loss[0]))
 print("The python computed loss is: " + str(python_loss))
 print("The analytically expected loss is: " + str(analytic_loss))
-assert np.isclose(analytic_loss, loss, atol=0.1)
+assert np.isclose(analytic_loss, loss, atol=0.1), "analytic loss and tensorflow loss not the same"
 assert np.isclose(analytic_loss, python_loss, atol=0.1)
 
 gradient = gradient[0, 2, 0, 0, 3]
@@ -72,7 +82,7 @@ python_loss, _, _ = malis_obj.pairs_to_loss_python(all_pairs, affinities)
 python_loss = python_loss[0]
 
 # analytically expected loss:
-analytic_loss = (3 + 3) * (1 - 0.7) ** 2 + 0
+analytic_loss = (3 + 3) * (1 - 0.6) ** 2 + 0
 analytic_gradient = 0
 
 print("The keras/tensorflow computed loss is: " + str(loss[0]))

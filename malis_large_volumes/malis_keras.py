@@ -2,25 +2,28 @@ import keras.backend as K
 import tensorflow as tf
 import numpy as np
 
+from .wrappers import get_pairs
+
 
 class Malis:
     def __init__(self,
-                 margin=.2,
-                 pos_loss_weight=0.5):
+                 margin=0.3,
+                 pos_loss_weight=0.3):
         self.margin = margin
         self.pos_loss_weight = pos_loss_weight
         self.neg_loss_weight = 1 - pos_loss_weight
 
     def pairs_to_loss_keras(self, pairs, pred):
         """
-        NOTE: right now this is not theano compatible (TODO)
+        NOTE: This is not theano compatible
         Input:
-        pairs [batch_size, 2*K, D, W, H]
+            pairs: (batch_size, 2*K, D, W, H)
                Contains the positive and negative pairs stacked on top of each
                other in the second dimension
-        pred  [batch_size, K, D, W, H]
+            pred:  (batch_size, K, D, W, H)
+                affinity predictions
         Returns:
-        malis_loss, vector of shape (batch_size,)
+            malis_loss: vector of shape (batch_size,)
         """
         pos_pairs = pairs[:, 0:3]
         neg_pairs = pairs[:, 3:6]
