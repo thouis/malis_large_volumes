@@ -1,5 +1,4 @@
 import numpy as np
-import malis_large_volumes
 from malis_large_volumes import pairs_python
 from malis_large_volumes import pairs_cython
 from malis_large_volumes import get_pairs_python
@@ -11,6 +10,7 @@ neighborhood = np.array([[-1, 0, 0],
                          [0, 0, -1]], dtype=np.int32)
 
 ignore_background = False
+
 
 def test(pairs_module, get_pairs):
     """
