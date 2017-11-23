@@ -1,8 +1,6 @@
 import numpy as np
 import malis_large_volumes
 import malis_large_volumes.malis_keras as mk
-from malis_large_volumes import pairs_cython as pairs_cython
-import malis.malis_pair_wrapper as malis_pairs_wrapper_turaga
 import tensorflow as tf
 
 na = np.newaxis
@@ -16,7 +14,7 @@ affinities[2, :, :, :] = np.array([[[.7, .7, .7, .3, .7, .7]]], dtype=np.float64
 affinities += np.random.normal(size=affinities.shape, scale=.0001)
 
 pos_pairs, neg_pairs = malis_large_volumes.get_pairs(labels, affinities,
-                          stochastic_malis_param=0)
+                                                     stochastic_malis_param=0)
 all_pairs = np.concatenate((pos_pairs, neg_pairs), axis=0).astype(np.float32)
 malis = mk.Malis(pos_loss_weight=0.5)
 
@@ -29,7 +27,7 @@ affinities = affinities[na, :]
 all_pairs = all_pairs[na, :]
 with tf.Session() as sess:
     loss = sess.run(loss_var, feed_dict={pairs_var: all_pairs,
-                                  affinities_var: affinities})
+                                         affinities_var: affinities})
     gradient = sess.run(affinities_grad, feed_dict={pairs_var: all_pairs,
                                                     affinities_var: affinities})
 print("\n\n")
@@ -39,7 +37,7 @@ python_loss, _, _ = malis.pairs_to_loss_python(all_pairs, affinities)
 python_loss = python_loss[0]
 
 # analytically expected loss:
-analytic_loss = (3 + 3) * (1-0.7) ** 2 + 9 * (0.3 ** 2)
+analytic_loss = (3 + 3) * (1 - 0.7) ** 2 + 9 * (0.3 ** 2)
 analytic_gradient = 2 * 9 * 0.3
 
 print("The keras/tensorflow computed loss is: " + str(loss[0]))
@@ -65,7 +63,7 @@ print("\nTest 2")
 affinities[0, 2, 0, 0, 3] = 0.1
 with tf.Session() as sess:
     loss = sess.run(loss_var, feed_dict={pairs_var: all_pairs,
-                                  affinities_var: affinities})
+                                         affinities_var: affinities})
     gradient = sess.run(affinities_grad, feed_dict={pairs_var: all_pairs,
                                                     affinities_var: affinities})
 
@@ -74,7 +72,7 @@ python_loss, _, _ = malis.pairs_to_loss_python(all_pairs, affinities)
 python_loss = python_loss[0]
 
 # analytically expected loss:
-analytic_loss = (3 + 3) * (1-0.7) ** 2 + 0
+analytic_loss = (3 + 3) * (1 - 0.7) ** 2 + 0
 analytic_gradient = 0
 
 print("The keras/tensorflow computed loss is: " + str(loss[0]))
