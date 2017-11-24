@@ -25,20 +25,21 @@ class Malis:
         """
         pos_pairs = pairs[:, 0:3]
         neg_pairs = pairs[:, 3:6]
-
-        # compute loss mask for losses outside of margin
-        ones_helpervar = tf.ones(shape=tf.shape(pred))
         zeros_helpervar = tf.zeros(shape=tf.shape(pred))
-        edges_not_in_upper_margin = tf.where(pred < 1 - self.margin, ones_helpervar, zeros_helpervar)
-        edges_not_in_lower_margin = tf.where(pred > self.margin, ones_helpervar, zeros_helpervar)
-        loss_mask = tf.where(pos_pairs > neg_pairs, edges_not_in_upper_margin, edges_not_in_lower_margin)
 
-        pos_loss = (1 - pred - self.margin)**2 * pos_pairs * loss_mask * self.pos_loss_weight
-        neg_loss = (pred - self.margin)**2 * neg_pairs * loss_mask * self.neg_loss_weight
-        # get the total loss at each element
-        elemwise_total_loss = pos_loss + neg_loss
-        malis_loss = K.sum(elemwise_total_loss, axis=(1, 2, 3, 4))
-        malis_loss = malis_loss * 2  # because of the pos_loss_weight and neg_loss_weight
+        pos_loss = tf.where(1 - pred - self.margin > 0,
+                            (1 - pred - self.margin)**2,
+                            zeros_helpervar)
+        pos_loss = pos_loss * pos_pairs
+        pos_loss = K.sum(pos_loss, axis=(1, 2, 3, 4)) * self. pos_loss_weight
+
+        neg_loss = tf.where(pred - self.margin > 0,
+                            (pred - self.margin)**2,
+                            zeros_helpervar)
+        neg_loss = neg_loss * neg_pairs
+        neg_loss = K.sum(neg_loss, axis=(1, 2, 3, 4)) * self. neg_loss_weight
+        malis_loss = (pos_loss + neg_loss) * 2  # because of the pos_loss_weight and neg_loss_weight
+
         return malis_loss
 
     def pairs_to_loss_python(self, pairs, pred):
@@ -63,18 +64,17 @@ class Malis:
         pos_pairs = pairs[:, 0:3]
         neg_pairs = pairs[:, 3:6]
 
-        # compute loss mask for losses outside of margin
-        ones_helpervar = np.ones(shape=np.shape(pred))
-        zeros_helpervar = np.zeros(shape=np.shape(pred))
-        edges_not_in_upper_margin = np.where(pred < 1 - self.margin, ones_helpervar, zeros_helpervar)
-        edges_not_in_lower_margin = np.where(pred > self.margin, ones_helpervar, zeros_helpervar)
-        loss_mask = np.where(pos_pairs > neg_pairs, edges_not_in_upper_margin, edges_not_in_lower_margin)
+        pos_loss = np.where(1 - pred - self.margin > 0,
+                            (1 - pred - self.margin)**2,
+                            0.0)
+        pos_loss = pos_loss * pos_pairs
+        pos_loss = np.sum(pos_loss, axis=(1, 2, 3, 4)) * self. pos_loss_weight
 
-        pos_loss = (1 - pred - self.margin)**2 * pos_pairs * loss_mask * self.pos_loss_weight
-        neg_loss = (pred - self.margin)**2 * neg_pairs * loss_mask * self.neg_loss_weight
-        # get the total loss at each element
-        elemwise_total_loss = pos_loss + neg_loss
-        malis_loss = np.sum(elemwise_total_loss, axis=(1, 2, 3, 4)) * 2
-        pos_loss = np.sum(pos_loss, axis=(1, 2, 3, 4)) * 2
-        neg_loss = np.sum(neg_loss, axis=(1, 2, 3, 4)) * 2
+        neg_loss = np.where(pred - self.margin > 0,
+                            (pred - self.margin)**2,
+                            0.0)
+        neg_loss = neg_loss * neg_pairs
+        neg_loss = np.sum(neg_loss, axis=(1, 2, 3, 4)) * self. neg_loss_weight
+        malis_loss = (pos_loss + neg_loss) * 2
+
         return malis_loss, pos_loss, neg_loss
