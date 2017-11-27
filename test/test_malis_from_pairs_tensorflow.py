@@ -46,7 +46,7 @@ python_loss = python_loss[0]
 
 # analytically expected loss:
 pos_loss = pos_loss_weight * ((3 + 3) * (1 - 0.6 - m) ** 2)
-neg_loss = pos_loss_weight * ((3 * 3) * (x - m) ** 2)
+neg_loss = neg_loss_weight * ((3 * 3) * (x - m) ** 2)
 analytic_loss = (pos_loss + neg_loss) * 2
 analytic_gradient = 2 * 9 * (0.4 - m)
 
