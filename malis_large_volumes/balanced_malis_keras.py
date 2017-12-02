@@ -33,14 +33,14 @@ class Malis:
                             (1 - pred)**2,
                             zeros_helpervar)
         pos_loss = pos_loss * tf.abs(balanced_pairs)
-        pos_loss = K.sum(pos_loss, axis=(1, 2, 3, 4)) * self. pos_loss_weight
+        pos_loss = K.mean(pos_loss, axis=(1, 2, 3, 4)) * self. pos_loss_weight
 
         neg_loss = tf.where(tf.logical_and(balanced_pairs <= 0,
                                            pred - self.margin > 0),
                             (pred)**2,
                             zeros_helpervar)
         neg_loss = neg_loss * tf.abs(balanced_pairs)
-        neg_loss = K.sum(neg_loss, axis=(1, 2, 3, 4)) * self. neg_loss_weight
+        neg_loss = K.mean(neg_loss, axis=(1, 2, 3, 4)) * self. neg_loss_weight
         malis_loss = (pos_loss + neg_loss) * 2  # because of the pos_loss_weight and neg_loss_weight
 
         return malis_loss
@@ -73,14 +73,14 @@ class Malis:
                             (1 - pred)**2,
                             0.0)
         pos_loss = pos_loss * np.abs(balanced_pairs)
-        pos_loss = np.sum(pos_loss, axis=(1, 2, 3, 4)) * self. pos_loss_weight
+        pos_loss = np.mean(pos_loss, axis=(1, 2, 3, 4)) * self. pos_loss_weight
 
         neg_loss = np.where(np.logical_and(balanced_pairs <= 0,
                                            pred - self.margin > 0),
                             (pred)**2,
                             0.0)
         neg_loss = neg_loss * np.abs(balanced_pairs)
-        neg_loss = np.sum(neg_loss, axis=(1, 2, 3, 4)) * self. neg_loss_weight
+        neg_loss = np.mean(neg_loss, axis=(1, 2, 3, 4)) * self. neg_loss_weight
         malis_loss = (pos_loss + neg_loss) * 2
 
         return malis_loss, pos_loss, neg_loss

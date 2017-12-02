@@ -43,11 +43,15 @@ python_loss, _, _ = malis_obj.pairs_to_loss_python(all_pairs, affinities)
 python_loss = python_loss[0]
 
 # analytically expected loss:
+n_edges = affinities[0].size
 pos_loss = pos_loss_weight * ((3 + 1) * (1 - 0.6 - m)**2)
+pos_loss /= n_edges  # to get the mean
 neg_loss = neg_loss_weight * (np.abs((3) - (3 * 2)) * (x_hat - m)**2) + \
            neg_loss_weight * ((np.abs(0 - 2) * (0.6 - m)**2))
+neg_loss /= n_edges  # to get the mean
 analytic_loss = (pos_loss + neg_loss) * 2
 analytic_gradient = 2 * np.abs((3) - (3 * 2)) * (x_hat - m)
+analytic_gradient /= n_edges  # to get the mean
 
 print("The keras/tensorflow computed loss is: " + str(loss[0]))
 print("The python computed loss is: " + str(python_loss))
