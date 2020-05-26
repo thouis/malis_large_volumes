@@ -1,4 +1,4 @@
-# Malis for large volumes
+# Malis Loss
 
 ## What is this?
 This program computes the object pair counts associated with the MALIS method as described in
@@ -7,32 +7,38 @@ SC Turaga, KL Briggman, M Helmstaedter, W Denk, HS Seung (2009). *Maximin learni
 
 http://papers.nips.cc/paper/3887-maximin-affinity-learning-of-image-segmentation
 
-## Why another implementation?
-There is already a fast c++ implementation at github.com/turagalab/malis. So why did we reimplement this?
-The existing implementation is not as memory efficient as possible, and it becomes prohibitively memory-demanding
-to compute malis for large volumes (hence the name malis_large_volumes here). This implementation computes malis with a
-lower memory footprint, but unfortunately at the cost of more computation time.
 
-## Usage
-We assume the following layout for your variables:
-- labels: (D, W, H)
-- affinities: (K, D, W, H) (K is the number of neighbors that a voxel has affinities to)
+## Installation:
 
-If you use a normal nearest neighbor connectivity:
-```python
-import malis_large_volumes
-pos_pairs, neg_pairs = malis_large_volumes.get_pairs(labels, affinities)
-```
-Otherwise you can also specify an arbitrary neighboorhood yourself.
+./make.sh            (Building c++ extension only: run inside directory)
+pip install .        (Installation as python package: run inside directory)
 
-For illustration purposes, let's use the nearest neighbor neighborhood (if you wouldn't specify it, 
-this is what malis_large_volumes will do):
-```python
-import malis_large_volumes
 
-neighborhood = np.array([[-1, 0, 0],
-                         [0, -1, 0],
-                         [0, 0, -1]], dtype=np.int32)
-pos_pairs, neg_pairs = malis_large_volumes.get_pairs(labels, affinities, neighborhood)
-```
-There are more options available for expert users. For those you will have to check the docstrings at the relevant functions.
+Installation example in anaconda:
+conda create -n malis python=3.7
+conda install cython
+conda install numpy
+conda install gxx_linux-64
+conda install -c anaconda boost
+./make.sh
+pip install .
+
+## Example Usage:
+
+### Using Keras/Tensorflow (channel last):
+import malis as m
+from malis.malis_keras import malis_loss
+
+loss = malis_loss(seg_gt,aff_pred)
+
+### Using Pytorch: 
+import malis as m
+from malis.malis_torch import malis_loss
+
+loss = malis_loss(aff_pred,seg_gt)
+
+### Functions of malis loss in python:
+
+nhood = m.mknhood3d(): Makes neighbourhood structures
+seg = m.seg_to_affgraph(seg_gt,nhood): Construct an affinity graph from a segmentation
+aff = m.affgraph_to_seg(affinity,nhood): Obtain a segentation graph from an affinity graph
