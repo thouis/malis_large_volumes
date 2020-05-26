@@ -467,10 +467,33 @@ def prune_and_renum(np.ndarray[uint64_t,ndim=1] seg,
 
 
 def bmap_to_affgraph(bmap,nhood,return_min_idx=False):
-    # constructs an affinity graph from a boundary map
-    # assume affinity graph is represented as:
-    # shape = (e, z, y, x)
-    # nhood.shape = (edges, 3)
+    """
+    Construct an affinity graph from a boundary map
+    
+    The spatial shape of the affinity graph is the same as of seg_gt.
+    This means that some edges are are undefined and therefore treated as disconnected.
+    If the offsets in nhood are positive, the edges with largest spatial index are undefined.    
+    
+    Parameters
+    ----------
+    
+    bmap: 3d np.ndarray, int
+        Volume of boundaries
+        0: object interior, 1: boundaries / ECS 
+    nhood: 2d np.ndarray, int
+        Neighbourhood pattern specifying the edges in the affinity graph
+        Shape: (#edges, ndim)
+        nhood[i] contains the displacement coordinates of edge i
+        The number and order of edges is arbitrary
+        
+    Returns
+    -------
+    
+    aff: 4d np.ndarray int32
+        Affinity graph of shape (#edges, x, y, z)
+        1: connected, 0: disconnected
+        
+    """
     shape = bmap.shape
     nEdge = nhood.shape[0]
     aff = np.zeros((nEdge,)+shape,dtype=np.int32)
@@ -501,10 +524,29 @@ def bmap_to_affgraph(bmap,nhood,return_min_idx=False):
     return aff
 
 def seg_to_affgraph(seg,nhood):
-    # constructs an affinity graph from a segmentation
-    # assume affinity graph is represented as:
-    # shape = (e, z, y, x)
-    # nhood.shape = (edges, 3)
+    """
+    Construct an affinity graph from a segmentation (IDs) 
+    
+    Segments with ID 0 are regarded as disconnected
+    The spatial shape of the affinity graph is the same as of seg_gt.
+    This means that some edges are are undefined and therefore treated as disconnected.
+    If the offsets in nhood are positive, the edges with largest spatial index are undefined.
+    
+    Input:    
+    seg_gt: 3d np.ndarray
+        Volume of segmentation IDs
+    nhood: 2d np.ndarray
+        Neighbourhood pattern specifying the edges in the affinity graph
+        Shape: (#edges, ndim)
+        nhood[i] contains the displacement coordinates of edge i
+        The number and order of edges is arbitrary
+        
+    Returns:
+    
+    aff: 4d np.ndarray
+        Affinity graph of shape (#edges, x, y, z)
+        1: connected, 0: disconnected        
+    """
     shape = seg.shape
     nEdge = nhood.shape[0]
     aff = np.zeros((nEdge,)+shape,dtype=np.int32)
@@ -530,10 +572,30 @@ def seg_to_affgraph(seg,nhood):
     return aff
 
 def nodelist_like(shape,nhood):
-    # constructs the node lists corresponding to the edge list representation of an affinity graph
-    # assume  node shape is represented as:
-    # shape = (z, y, x)
-    # nhood.shape = (edges, 3)
+    """
+    Constructs the two node lists to represent edges of
+    an affinity graph for a given volume shape and neighbourhood pattern.
+    
+    Parameters
+    ----------
+    
+    shape: tuple/list
+     shape of corresponding volume (z, y, x)
+    nhood: 2d np.ndarray, int
+        Neighbourhood pattern specifying the edges in the affinity graph
+        Shape: (#edges, ndim)
+        nhood[i] contains the displacement coordinates of edge i
+        The number and order of edges is arbitrary
+        
+    Returns
+    -------
+    
+    node1: 4d np.ndarray, int32
+        Start nodes, reshaped as array
+    
+    node2: 4d np.ndarray, int32
+        End nodes, reshaped as array
+    """
     nEdge = nhood.shape[0]
     nodes = np.arange(np.prod(shape),dtype=np.uint64).reshape(shape)
     node1 = np.tile(nodes,(nEdge,1,1,1))
@@ -556,6 +618,24 @@ def affgraph_to_edgelist(aff,nhood):
     return (node1.ravel(),node2.ravel(),aff.ravel())
 
 def affgraph_to_seg(aff,nhood):
+    """
+    Input:
+    
+    affinity_gt: 4d np.ndarray
+        Affinity graph of shape (#edges, x, y, z)
+        1: connected, 0: disconnected 
+    nhood: 2d np.ndarray
+        Neighbourhood pattern specifying the edges in the affinity graph
+        Shape: (#edges, ndim)
+        nhood[i] contains the displacement coordinates of edge i
+        The number and order of edges is arbitrary
+        
+    Output:
+    
+    seg_gt: 3d np.ndarray, int 
+        Volume of segmentation IDs
+    
+    """
     (node1,node2,edge) = affgraph_to_edgelist(aff,nhood)
     (seg,segSizes) = connected_components(int(np.prod(aff.shape[1:])),node1,node2,edge)
     seg = seg.reshape(aff.shape[1:])
@@ -566,6 +646,25 @@ def mk_cont_table(seg1,seg2):
     return cont_table
 
 def compute_V_rand_N2(segTrue,segEst):
+    """
+    Computes Rand index of ``seg_pred`` w.r.t ``seg_true``.
+    The input arrays both contain label IDs and
+    may be of arbitrary, but equal, shape.
+    
+    Pixels which are have ID in the true segmentation are not counted!
+    
+    Parameters:
+    
+    seg_true: np.ndarray
+      True segmentation, IDs
+    seg_pred: np.ndarray
+      Predicted segmentation
+    
+    Returns
+    -------
+    
+    ri: ???
+    """
     segTrue = segTrue.ravel()
     segEst = segEst.ravel()
     idx = segTrue != 0
@@ -620,11 +719,13 @@ def mknhood2d(radius=1):
     return np.ascontiguousarray(np.flipud(nhood))
 
 def mknhood3d(radius=1):
-    # Makes nhood structures for some most used dense graphs.
-    # The neighborhood reference for the dense graph representation we use
-    # nhood(1,:) is a 3 vector that describe the node that conn(:,:,:,1) connects to
-    # so to use it: conn(23,12,42,3) is the edge between node [23 12 42] and [23 12 42]+nhood(3,:)
-    # See? It's simple! nhood is just the offset vector that the edge corresponds to.
+    """
+    Makes nhood structures for some most used dense graphs.
+    The neighborhood reference for the dense graph representation we use
+    nhood(1,:) is a 3 vector that describe the node that conn(:,:,:,1) connects to
+    so to use it: conn(23,12,42,3) is the edge between node [23 12 42] and [23 12 42]+nhood(3,:)
+    See? It's simple! nhood is just the offset vector that the edge corresponds to.
+    """
 
     ceilrad = np.ceil(radius)
     x = np.arange(-ceilrad,ceilrad+1,1)
