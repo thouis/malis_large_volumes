@@ -15,6 +15,7 @@ http://papers.nips.cc/paper/3887-maximin-affinity-learning-of-image-segmentation
 pip install .        (Installation as python package: run inside directory)
 
 
+
 Installation example in anaconda:
 
 conda create -n malis python=3.7
