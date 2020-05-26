@@ -2,6 +2,7 @@ import keras.backend as K
 import tensorflow as tf
 import numpy as np
 from .wrappers import get_pairs
+from .pairs_cython import mknhood3d
 
 
 class Malis:
@@ -79,27 +80,44 @@ class Malis:
         return malis_loss, pos_loss, neg_loss
 
 malis_obj = Malis()
-def malis_loss(y_true,y_pred): 
-    '''
-    Input:
-        y_true: Tensor (batch_size, H, W, C = 1)
-           segmentation groundtruth
-        y_pred: Tensor (batch_size, H, W, C = 3/2)
-            affinity predictions from network
-    Returns:
-    '''
-        
-    y = K.int_shape(y_pred)[1]  # H
-    x = K.int_shape(y_pred)[2]  # W
+def malis_loss(batchsize):
+    def loss(y_true,y_pred): 
+        '''
+        Input:
+            y_true: Tensor (batch_size, H, W, C = 1)
+               segmentation groundtruth
+            y_pred: Tensor (batch_size, H, W, C = 3/2)
+                affinity predictions from network
+        Returns:
+            malis loss
+        '''
 
-    seg_true = K.reshape(y_true,(y,x,-1))   # (H,W,C'=C*batch_size)
-    y_pred = K.permute_dimensions(y_pred,(3,1,2,0))   #(C=3,H,W,batch_size)
+        y = K.int_shape(y_pred)[1]  # H
+        x = K.int_shape(y_pred)[2]  # W
 
-    pos_pairs, neg_pairs = tf.numpy_function(func = get_pairs,inp=[seg_true, y_pred],
-                                             Tout=[tf.uint64,tf.uint64])
-    pos_pairs = tf.cast(pos_pairs,tf.float32)
-    neg_pairs = tf.cast(neg_pairs,tf.float32) 
+        seg_true = K.reshape(y_true,(y,x,batchsize))   # (H,W,C'=C*batch_size)
+        y_pred = K.permute_dimensions(y_pred,(3,1,2,0))   #(C=3/2,H,W,batch_size)
+                
+        '''
+        malis loss part:
+        nhood = mknhood3d(1)[:-1] #[[-1,0,0],[0,-1,0]] for 2d image 
+        nhood = mknhood3d(1)      #[[-1,0,0],[0,-1,0],[0,0,-1]] for 3d image
+        get_pairs: get positive and negtive weights
+                   inputs: seg_true (H,W,C')
+                           y_pred (edge,H,W,C')
+                   outputs: pos_pairs and neg_pairs (edge,H,W,C')
+        pairs_to_loss_keras: get final malis loss
+                   inputs: pos_pairs,neg_paris: output of get_pairs (edge,H,W,C')
+                           y_pred: (edge,H,W,C')
+                   outputs: loss (scale tensor)
+        '''
+        nhood = mknhood3d(1)[:-1] 
+        pos_pairs, neg_pairs = tf.numpy_function(func = get_pairs,inp=[seg_true, y_pred, nhood],
+                                                 Tout=[tf.uint64,tf.uint64])
+        pos_pairs = tf.cast(pos_pairs,tf.float32)
+        neg_pairs = tf.cast(neg_pairs,tf.float32) 
 
-    loss = malis_obj.pairs_to_loss_keras(pos_pairs, neg_pairs, y_pred)
+        loss = malis_obj.pairs_to_loss_keras(pos_pairs, neg_pairs, y_pred)
+        return loss
     
     return loss
