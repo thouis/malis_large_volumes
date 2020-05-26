@@ -11,34 +11,54 @@ http://papers.nips.cc/paper/3887-maximin-affinity-learning-of-image-segmentation
 ## Installation:
 
 ./make.sh            (Building c++ extension only: run inside directory)
+
 pip install .        (Installation as python package: run inside directory)
 
 
-Installation example in anaconda:
+
+### Installation example in anaconda:
+
 conda create -n malis python=3.7
+
 conda install cython
+
 conda install numpy
+
 conda install gxx_linux-64
+
 conda install -c anaconda boost
+
 ./make.sh
+
 pip install .
+
 
 ## Example Usage:
 
 ### Using Keras/Tensorflow (channel last):
+
 import malis as m
+
 from malis.malis_keras import malis_loss
+
 
 loss = malis_loss(seg_gt,aff_pred)
 
 ### Using Pytorch: 
+
 import malis as m
+
 from malis.malis_torch import malis_loss
 
+
 loss = malis_loss(aff_pred,seg_gt)
+
 
 ### Functions of malis loss in python:
 
 nhood = m.mknhood3d(): Makes neighbourhood structures
+
 seg = m.seg_to_affgraph(seg_gt,nhood): Construct an affinity graph from a segmentation
+
 aff = m.affgraph_to_seg(affinity,nhood): Obtain a segentation graph from an affinity graph
+
