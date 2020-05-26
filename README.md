@@ -16,7 +16,7 @@ pip install .        (Installation as python package: run inside directory)
 
 
 
-Installation example in anaconda:
+### Installation example in anaconda:
 
 conda create -n malis python=3.7
 
