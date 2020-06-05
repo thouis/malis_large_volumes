@@ -42,7 +42,7 @@ import malis as m
 from malis.malis_keras import malis_loss
 
 
-loss = malis_loss(seg_gt,aff_pred)
+model.compile(optimizer, loss = malis_loss(batch_size))
 
 ### Using Pytorch: 
 
