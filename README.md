@@ -9,10 +9,10 @@ http://papers.nips.cc/paper/3887-maximin-affinity-learning-of-image-segmentation
 
 
 ## Installation:
-
+'''
 ./make.sh            (Building c++ extension only: run inside directory)
-
 pip install .        (Installation as python package: run inside directory)
+'''
 
 
 
