@@ -2,7 +2,7 @@ import keras.backend as K
 import tensorflow as tf
 import numpy as np
 from .wrappers import get_pairs
-
+from .pairs_cython import mknhood3d
 
 
 def pairs_to_loss_keras(pos_pairs, neg_pairs, pred, margin=0.3, pos_loss_weight=0.3):
@@ -53,8 +53,8 @@ def malis_loss2d(y_true,y_pred):
     y_pred = K.permute_dimensions(y_pred,(3,1,2,0))   # (C=2,H,W,batch_size)
     #########
     
-    nhood = malis.mknhood3d(1)[:-1]                    
-    pos_pairs, neg_pairs = tf.numpy_function(func = malis.get_pairs,inp=[seg_true, y_pred, nhood],
+    nhood = mknhood3d(1)[:-1]                    
+    pos_pairs, neg_pairs = tf.numpy_function(func = get_pairs,inp=[seg_true, y_pred, nhood],
                                              Tout=[tf.uint64,tf.uint64])
     pos_pairs = tf.cast(pos_pairs,tf.float32)
     neg_pairs = tf.cast(neg_pairs,tf.float32) 
@@ -80,13 +80,13 @@ def malis_loss3d(y_true,y_pred):
     z = K.int_shape(y_pred)[3]  # D
 
     seg_true = K.reshape(y_true,(x,y,z))              # (H,W,D)
-    y_pred = K.reshape(y_pred,(H,W,D,-1))             # (H,W,D,C=3)
+    y_pred = K.reshape(y_pred,(x,y,z,-1))             # (H,W,D,C=3)
     y_pred = K.permute_dimensions(y_pred,(3,0,1,2))   # (C=3,H,W,D)
     
     #########
     
-    nhood = malis.mknhood3d(1)                  
-    pos_pairs, neg_pairs = tf.numpy_function(func = malis.get_pairs,inp=[seg_true, y_pred, nhood],
+    nhood = mknhood3d(1)                  
+    pos_pairs, neg_pairs = tf.numpy_function(func = get_pairs,inp=[seg_true, y_pred, nhood],
                                              Tout=[tf.uint64,tf.uint64])
     pos_pairs = tf.cast(pos_pairs,tf.float32)
     neg_pairs = tf.cast(neg_pairs,tf.float32) 
