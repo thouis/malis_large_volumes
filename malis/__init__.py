@@ -1,7 +1,7 @@
 import numpy as np
 #from . import malis_keras
 #from . import malis_torch
-from .wrappers import get_pairs, get_pairs_python
+from .wrappers import get_pairs
 from .pairs_cython import seg_to_affgraph,mknhood3d,affgraph_to_seg
 
 
