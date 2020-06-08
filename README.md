@@ -27,7 +27,7 @@ pip install .
 ```
 
 ## Example Usage:
-
+See keras_example and pytorch_example in example folder for further detailed training(with UNet) examples
 ### Using Keras/Tensorflow (channel last):
 
 #### 2D usage
