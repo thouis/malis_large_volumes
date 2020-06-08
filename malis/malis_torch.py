@@ -2,7 +2,7 @@ import torch
 from torch.autograd import Function
 from .wrappers import get_pairs
 import numpy as np
-
+from .pairs_cython import mknhood3d
 
 class torchloss(Function):
     @staticmethod
@@ -52,7 +52,7 @@ def malis_loss2d(seg_gt,output):
     #    output: Tensor(batch size, channel=2, H, W)
     #           predicted affinity graphs from network
     #    seg_gt: Tensor(batch size, channel=1, H, W)
-                segmentation groundtruth     
+    #            segmentation groundtruth     
     # Returns: 
     #    loss: Tensor(scale)
     #           malis loss 
@@ -63,7 +63,7 @@ def malis_loss2d(seg_gt,output):
     seg_gt = seg_gt.reshape(x,y,-1)            # (H,W,C'=C*batch_size)
     #########
     
-    nhood = malis.mknhood3d(1)[:-1]  
+    nhood = mknhood3d(1)[:-1]  
     pos_pairs,neg_pairs = torchloss.apply(output, seg_gt, nhood)
     loss = pairs_to_loss_torch(pos_pairs, neg_pairs, output)
     
@@ -75,7 +75,7 @@ def malis_loss3d(seg_gt,output):
     #    output: Tensor(batch size=1, channel=3, H, W, D)
     #           predicted affinity graphs from network
     #    seg_gt: Tensor(batch size=1, channel=1, H, W, D)
-                segmentation groundtruth     
+    #            segmentation groundtruth     
     # Returns: 
     #    loss: Tensor(scale)
     #           malis loss 
@@ -86,7 +86,7 @@ def malis_loss3d(seg_gt,output):
     seg_gt = seg_gt.reshape(x,y,z)            # (H,W,D)
     #########
     
-    nhood = malis.mknhood3d(1) 
+    nhood = mknhood3d(1) 
     pos_pairs,neg_pairs = torchloss.apply(output, seg_gt, nhood)
     loss = pairs_to_loss_torch(pos_pairs, neg_pairs, output)
     
