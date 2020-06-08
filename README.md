@@ -33,142 +33,35 @@ pip install .
 #### 2D usage
 ```
 import malis as m
-from malis.malis_keras import pairs_to_loss_keras
-
-def malis_loss(y_true,y_pred): 
-    # Input:
-    #    y_true: Tensor (batch_size, H, W, C = 1)
-    #       segmentation groundtruth
-    #    y_pred: Tensor (batch_size, H, W, C = 2)
-    #        affinity predictions from network
-    # Returns:
-    #    loss: Tensor(scale)
-    #           malis loss 
-    
-    ######### please modify here to make sure seg_true and y_pred has the correct shape      
-    x = K.int_shape(y_pred)[1]  # H
-    y = K.int_shape(y_pred)[2]  # W
-
-    seg_true = K.reshape(y_true,(x,y,-1))             # (H,W,C'=C*batch_size)
-    y_pred = K.permute_dimensions(y_pred,(3,1,2,0))   # (C=2,H,W,batch_size)
-    #########
-    
-    nhood = malis.mknhood3d(1)[:-1]                    
-    pos_pairs, neg_pairs = tf.numpy_function(func = malis.get_pairs,inp=[seg_true, y_pred, nhood],
-                                             Tout=[tf.uint64,tf.uint64])
-    pos_pairs = tf.cast(pos_pairs,tf.float32)
-    neg_pairs = tf.cast(neg_pairs,tf.float32) 
-
-    loss = pairs_to_loss_keras(pos_pairs, neg_pairs, y_pred)
-    
-    return loss
+from malis.malis_keras import malis_loss2d
 
 model = ... (set the channel of output layer as 2)
-
-model.compile(optimizer, loss = malis_loss)
+model.compile(optimizer, loss = malis_loss2d)
 ```
 
 #### 3D usage (please use batch size as 1)
 ```
 import malis as m
-from malis.malis_keras import pairs_to_loss_keras
-
-def malis_loss(y_true,y_pred): 
-    # Input:
-    #    y_true: Tensor (batch_size=1, H, W, D, C=1)
-    #       segmentation groundtruth
-    #    y_pred: Tensor (batch_size=1, H, W, D, C=3)
-    #        affinity predictions from network
-    # Returns:
-    #    loss: Tensor(scale)
-    #           malis loss 
-    
-    ######### please modify here to make sure seg_true and y_pred has the correct shape      
-    x = K.int_shape(y_pred)[1]  # H
-    y = K.int_shape(y_pred)[2]  # W
-    z = K.int_shape(y_pred)[3]  # D
-
-    seg_true = K.reshape(y_true,(x,y,z))              # (H,W,D)
-    y_pred = K.reshape(y_pred,(H,W,D,-1))             # (H,W,D,C=3)
-    y_pred = K.permute_dimensions(y_pred,(3,0,1,2))   # (C=3,H,W,D)
-    
-    #########
-    
-    nhood = malis.mknhood3d(1)                  
-    pos_pairs, neg_pairs = tf.numpy_function(func = malis.get_pairs,inp=[seg_true, y_pred, nhood],
-                                             Tout=[tf.uint64,tf.uint64])
-    pos_pairs = tf.cast(pos_pairs,tf.float32)
-    neg_pairs = tf.cast(neg_pairs,tf.float32) 
-
-    loss = pairs_to_loss_keras(pos_pairs, neg_pairs, y_pred)
-    
-    return loss
+from malis.malis_keras import malis_loss3d
 
 model = ... (set the channel of output layer as 3)
-
-model.compile(optimizer, loss = malis_loss)
+model.compile(optimizer, loss = malis_loss3d)
 ```
 
 ### Using Pytorch: 
 #### 2D usage
 ```
 import malis
-from malis.malis_torch import torchloss,pairs_to_loss_torch
-
-def malis_loss(seg_gt,output): 
+from malis.malis_torch import malis_loss2d
     
-    # Input:
-    #    output: Tensor(batch size, channel=2, H, W)
-    #           predicted affinity graphs from network
-    #    seg_gt: Tensor(batch size, channel=1, H, W)
-                segmentation groundtruth     
-    # Returns: 
-    #    loss: Tensor(scale)
-    #           malis loss 
-    
-    ######### please modify here to make sure seg_gt and output has the correct shape
-    x,y = seg_gt.shape[2],seg_gt.shape[3]
-    output = output.permute(1,2,3,0)           # (2,H,W,batch_size)
-    seg_gt = seg_gt.reshape(x,y,-1)            # (H,W,C'=C*batch_size)
-    #########
-    
-    nhood = malis.mknhood3d(1)[:-1]  
-    pos_pairs,neg_pairs = torchloss.apply(output, seg_gt, nhood)
-    loss = pairs_to_loss_torch(pos_pairs, neg_pairs, output)
-    
-    return loss
-    
-loss = malis_loss(seg_gt, output)
+loss = malis_loss2d(seg_gt, pred_aff)
 ```
 #### 3D usage (please use batch size as 1)
 ```
 import malis
-from malis.malis_torch import torchloss,pairs_to_loss_torch
-
-def malis_loss(seg_gt,output): 
+from malis.malis_torch import malis_loss3d
     
-    # Input:
-    #    output: Tensor(batch size=1, channel=3, H, W, D)
-    #           predicted affinity graphs from network
-    #    seg_gt: Tensor(batch size=1, channel=1, H, W, D)
-                segmentation groundtruth     
-    # Returns: 
-    #    loss: Tensor(scale)
-    #           malis loss 
-    
-    ######### please modify here to make sure seg_gt and output has the correct shape
-    x,y,z = seg_gt.shape[2],seg_gt.shape[3],seg_gt.shape[4]
-    output = output.reshape(-1,x,y,z)         # (3,H,W,D)
-    seg_gt = seg_gt.reshape(x,y,z)            # (H,W,D)
-    #########
-    
-    nhood = malis.mknhood3d(1) 
-    pos_pairs,neg_pairs = torchloss.apply(output, seg_gt, nhood)
-    loss = pairs_to_loss_torch(pos_pairs, neg_pairs, output)
-    
-    return loss
-    
-loss = malis_loss(seg_gt, output)
+loss = malis_loss3d(seg_gt, pred_aff)
 ```
 
 ### Useful Functions of malis loss in python:
