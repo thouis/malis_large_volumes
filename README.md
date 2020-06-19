@@ -9,7 +9,18 @@ http://papers.nips.cc/paper/3887-maximin-affinity-learning-of-image-segmentation
 
 ## Performance of malis loss:
 ![image](https://github.com/HelmholtzAI-Consultants-Munich/Malis-Loss/blob/master/README_files/result.png)
-![example](https://github.com/HelmholtzAI-Consultants-Munich/Malis-Loss/blob/master/example/keras_example.py)
+
+This figure compares the performance of malis loss and cross entropy loss for segmenting mitochondrion. The two networks (UNet, please check /example/keras_example.py) were trained totally same except for the loss. The evaluation criteria (values shown on the figure) for segmentation is based on counting the number of correctly segmented mitochondria (Dice coefficient > 70 %), divided by the average of total number of ground-truth mitochondria and that of automatic segmented mitochondria (similar to the definition of the Dice coefficient, but number-based rather than pixel-based). The final average scores for these three cases are summarized in this table:
+
+
+| cross entropy loss  | malis loss |
+| ------------- | ------------- |
+Image 1 | 0.57  | 0.71  |
+Image 2 | 0.68  | 0.80  |
+Image 3 | 0.39  | 0.77  |
+
+It can be shown that for this criteria, malis loss can achieved better performance than cross entropy loss. Malis loss performs better in separating nearby mitochondria and generating more clear boundaries, especially when the input data has many adjacent mitochondria (eg. Image 3).
+
 
 ## Installation:
 ```
