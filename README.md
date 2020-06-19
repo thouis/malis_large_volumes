@@ -9,6 +9,8 @@ http://papers.nips.cc/paper/3887-maximin-affinity-learning-of-image-segmentation
 
 ## Performance of malis loss:
 ![image](https://github.com/HelmholtzAI-Consultants-Munich/Malis-Loss/blob/master/README_files/result.png)
+![](https://github.com/HelmholtzAI-Consultants-Munich/Malis-Loss/blob/master/example/keras_example.py)
+
 ## Installation:
 ```
 ./make.sh            (Building c++ extension only: run inside directory)
