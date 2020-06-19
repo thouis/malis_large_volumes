@@ -13,7 +13,7 @@ http://papers.nips.cc/paper/3887-maximin-affinity-learning-of-image-segmentation
 This figure compares the performance of malis loss and cross entropy loss for segmenting mitochondrion. The two networks (UNet, please check /example/keras_example.py) were trained totally same except for the loss. The evaluation criteria (values shown on the figure) for segmentation is based on counting the number of correctly segmented mitochondria (Dice coefficient > 70 %), divided by the average of total number of ground-truth mitochondria and that of automatic segmented mitochondria (similar to the definition of the Dice coefficient, but number-based rather than pixel-based). The final average scores for these three cases are summarized in this table:
 
 
-  | cross entropy loss  | malis loss |
+cases| cross entropy loss  | malis loss |
 -------| ------------- | ------------- |
 Image 1 | 0.57  | 0.71  |
 Image 2 | 0.68  | 0.80  |
