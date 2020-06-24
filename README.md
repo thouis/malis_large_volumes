@@ -77,14 +77,6 @@ from malis.malis_torch import malis_loss3d
     
 loss = malis_loss3d(seg_gt, pred_aff)
 ```
-
-### Useful Functions of malis loss in python:
-```
-import malis as m
-nhood = m.mknhood3d(): Makes neighbourhood structures
-aff = m.seg_to_affgraph(seg_gt,nhood): Construct an affinity graph from a segmentation
-seg = m.affgraph_to_seg(affinity,nhood): Obtain a segentation graph from an affinity graph
-```
 ### Postprocessing:
 The output of network should be affinity graphs, to obtain final segmentation graphs, threshold should be manully selected and than apply affgraph_to_seg functions. An example is like below:
 ```
@@ -96,3 +88,12 @@ aff = np.where(aff<threshold,0,1)
 nhood = malis.mknhood3d(1)[:-1]  # or malis.mknhood3d(1) for 3d data prediction
 seg = m.affgraph_to_seg(aff,nhood)
 ```
+More detailed example including automaticaly selecting threshold could be found in /postprocessing/postprocessing.ipynb.
+### Useful Functions of malis loss in python:
+```
+import malis as m
+nhood = m.mknhood3d(): Makes neighbourhood structures
+aff = m.seg_to_affgraph(seg_gt,nhood): Construct an affinity graph from a segmentation
+seg = m.affgraph_to_seg(affinity,nhood): Obtain a segementation graph from an affinity graph
+```
+
